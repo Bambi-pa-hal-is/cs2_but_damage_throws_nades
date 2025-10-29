@@ -1,0 +1,76 @@
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:modeldoc40:version{da0ab1f8-9722-4910-94b8-10b6a08c0934} -->
+{
+	rootNode = 
+	{
+		_class = "RootNode"
+		children = 
+		[
+			{
+				_class = "RenderMeshList"
+				children = 
+				[
+					{
+						_class = "RenderMeshFile"
+						filename = "models\\fbx\\mesh\\player_button.fbx"
+						import_scale = 1.0
+						import_filter = 
+						{
+							exclude_by_default = false
+							exception_list = [  ]
+						}
+					},
+				]
+			},
+			{
+				_class = "GameDataList"
+				children = 
+				[
+					{
+						_class = "GenericGameData"
+						game_class = "prop_data"
+						game_keys = 
+						{
+							base = null
+							allowstatic = false
+							bakelighting = true
+							damage_table = ""
+							dmg.bullets = -1.0
+							dmg.club = -1.0
+							dmg.explosive = -1.0
+							dmg.fire = -1.0
+							health = 10000.0
+							spawn_motion_disabled = true
+						}
+					},
+				]
+			},
+			{
+				_class = "PhysicsShapeList"
+				children = 
+				[
+					{
+						_class = "PhysicsMeshFromRender"
+						parent_bone = ""
+						surface_prop = "no_decal"
+						collision_prop = "default"
+						tool_material = ""
+						hitgroupname = "HITGROUP_GENERIC"
+						renderMeshList = [  ]
+						simplification_params = 
+						{
+							qemError = 0.0
+							maxMeshVertices = 0
+							small_element_threshold = 0.0
+							thin_element_threshold = 0.0
+						}
+					},
+				]
+				leave_body_collision_unmodified = false
+			},
+		]
+		model_archetype = ""
+		primary_associated_entity = ""
+		anim_graph_name = ""
+		document_sub_type = "ModelDocSubType_None"
+	}
+}
