@@ -170,6 +170,13 @@ Instance.OnGunFire((event) => {
         caller: owner,
         delay: 0
     });
+        Instance.EntFireAtTarget({ 
+        target: molotov,
+        input: "kill",
+        activator: owner,
+        caller: owner,
+        delay: 3
+    });
 });
 
 

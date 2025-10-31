@@ -24,13 +24,6 @@ var configuration = {
 Instance.OnScriptInput("SelectMap", (caller) => {
 
     configuration.selectedMap = caller?.caller?.GetEntityName() ?? "";
-    Instance.DebugScreenText({
-        text: configuration.selectedMap,
-        x: 10,
-        y: 25,
-        duration: 1,
-        color: { r: 0xff, g: 0, b: 0xff }
-    });
     for (var i = 0; i < maps.length; i++) {
         var map = maps[i];
         var mapButton = Instance.FindEntityByName(map);
