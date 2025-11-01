@@ -1,7 +1,8 @@
-import { BaseModelEntity, CSPlayerController, Instance } from "cs_script/point_script";
+import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
 
-const playerButtonPrefix = "player_button_";
-const playerNamePrefix = "player_name_";
+const ctTeam = 3;
+const tTeam = 2;
+const buttonOffset = 25;
 
 interface Player {
 	id: number;
@@ -9,6 +10,13 @@ interface Player {
 	name: string;
 	currentTeam: number;
 	teamToJoinWhenGameStart: number;
+    playerButton: PlayerButton;
+	playerController: CSPlayerController | null;
+}
+
+interface PlayerButton {
+	entity: Entity;
+	text: Entity;
 }
 
 interface Configuration {
@@ -21,8 +29,8 @@ let configuration: Configuration = {
 	gameHasStarted: false,
 };
 
-const findById = (id: number): Player | undefined =>
-	configuration.players.find((player) => player.id === id);
+const findById = (id: number): Player | undefined => configuration.players.find((player) => player.id === id);
+const findByButtonEntity = (button: Entity): Player | undefined => configuration.players.find((player) => player.playerButton.entity === button);
 
 const upsertFromController = (controller: CSPlayerController): Player => {
 	const id = controller.GetPlayerSlot();
@@ -37,7 +45,9 @@ const upsertFromController = (controller: CSPlayerController): Player => {
 			isBot,
 			name,
 			currentTeam: team,
-			teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? 3 : 2,
+			playerController: controller,
+			teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? ctTeam : tTeam,
+            playerButton: createPlayerButton({position: {x:0, y:0, z:0}})!,
 		};
 		configuration.players.push(player);
 		Instance.Msg(`Player added: ${name} (id=${id}, bot=${isBot}, team=${team})`);
@@ -69,73 +79,44 @@ const updateUi = (): void => {
 		return;
 	}
 
-	let idleAnchor;
 	let tOffset = 0;
 	let ctOffset = 0;
 
-	const maxPlayers = 16;
-	for (let index = 0; index < maxPlayers; index += 1) {
-		const player = configuration.players[index];
-		const playerButton = Instance.FindEntityByName(`${playerButtonPrefix}${index}`);
+	for (let i = 0; i < configuration.players.length; i += 1) {
+		const player = configuration.players[i];
+		const playerButton = player.playerButton.entity;
+		const playerButtonText = player.playerButton.text;
 
-		if (!playerButton) {
-			Instance.Msg(`Cannot find ${playerButtonPrefix}${index}`);
-			continue;
+		const anchor: Entity = (player.teamToJoinWhenGameStart === ctTeam ? ctAnchor : tAnchor)!;
+		if (anchor === tAnchor) {
+			tOffset -= buttonOffset;
+		} else {
+			ctOffset -= buttonOffset;
 		}
 
-		if (player) {
-			const anchor: Entity = (player.teamToJoinWhenGameStart === 3 ? ctAnchor : tAnchor)!;
-			if (anchor === tAnchor) {
-				tOffset -= 25;
-			} else {
-				ctOffset -= 25;
-			}
-
-			const base = anchor.GetAbsOrigin();
-			playerButton.Teleport({
-				position: {
-					x: base.x,
-					y: base.y,
-					z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-				},
-				angles: undefined,
-				velocity: undefined,
-			});
-
-			const namePrefix = player.isBot ? "BOT " : "";
-			Instance.EntFireAtName({
-				name: `${playerNamePrefix}${index}`,
-				input: "setmessage",
-				value: `${namePrefix}${player.name}`,
-				delay: 0,
-			});
-			continue;
-		}
-
-		if (!idleAnchor) {
-			idleAnchor = Instance.FindEntityByName("player_button_idle_position");
-			if (!idleAnchor) {
-				Instance.Msg("Cannot find player_button_idle_position");
-				continue;
-			}
-		}
-
-		Instance.Msg(`Updating for empty${index}`);
-		const base = idleAnchor.GetAbsOrigin();
+		const base = anchor.GetAbsOrigin();
 		playerButton.Teleport({
 			position: {
 				x: base.x,
 				y: base.y,
-				z: base.z + index * -25,
-			},
-			angles: undefined,
-			velocity: undefined,
+				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+			}
 		});
 
-		Instance.EntFireAtName({
-			name: `${playerNamePrefix}${index}`,
+		const namePrefix = player.isBot ? "BOT " : "";
+
+		playerButtonText.Teleport({
+			position: {
+				x: base.x,
+				y: base.y,
+				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+			}
+		});
+
+		Instance.EntFireAtTarget({
+			target: playerButtonText,
 			input: "setmessage",
-			value: "Empty",
+			value: `${namePrefix}${player.name}`,
 			delay: 0,
 		});
 	}
@@ -207,28 +188,24 @@ Instance.OnActivate(() => {
 });
 
 Instance.OnScriptInput("TogglePlayerTeam", (event) => {
-	const buttonEntity = event.caller as (BaseModelEntity & {
-		SetHealth?(value: number): void;
-	}) | undefined;
-	const buttonName = buttonEntity?.GetEntityName();
-
-	if (!buttonName) {
+	const buttonEntity = event.caller;
+	if (!buttonEntity) {
+		Instance.Msg(`Cannot identify button entity from caller`);
 		return;
 	}
 
-	buttonEntity?.SetHealth?.(1000);
-
-	const playerIndex = Number(buttonName.replace(playerButtonPrefix, ""));
-	if (Number.isNaN(playerIndex)) {
-		return;
-	}
-
-	const player = configuration.players[playerIndex];
+	let player = findByButtonEntity(buttonEntity!);
 	if (!player) {
+		Instance.Msg(`Cannot find player associated with button entity`);
 		return;
 	}
 
-	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === 3 ? 2 : 3;
+	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === ctTeam ? tTeam : ctTeam;
+	killPlayerButton(player.playerButton);
+	var newPlayerButton = createPlayerButton({position: buttonEntity.GetAbsOrigin()});
+	if (newPlayerButton) {
+		player.playerButton = newPlayerButton;
+	}
 	updateUi();
 });
 
@@ -245,6 +222,59 @@ Instance.OnScriptReload({
 		}
 	},
 });
+
+const killPlayerButton = (playerButton: PlayerButton) => {
+	Instance.EntFireAtTarget({
+		target: playerButton.entity,
+		input: "kill",
+	});
+	Instance.EntFireAtTarget({
+		target: playerButton.text,
+		input: "kill",
+	});
+};
+
+const createPlayerButton = (data: {position: Vector}): PlayerButton | null => {
+
+    const template = Instance.FindEntityByName("player_button_point_template");
+    if (!template) {
+        Instance.Msg("player_button_point_template not found");
+        return null;
+    }
+
+    if (!(template instanceof PointTemplate)) {
+        Instance.Msg("player_button_point_template is not of type point template");
+        return null;
+    }
+
+
+    const spawned = template.ForceSpawn(data.position);
+    if (!spawned || spawned.length < 2) {
+        return null;
+    }
+
+    const [button, buttonText] = spawned;
+
+    button.Teleport({
+        position: data.position,
+        angles: undefined,
+        velocity: undefined,
+    });
+
+    buttonText.Teleport({
+        position: data.position,
+        angles: undefined,
+        velocity: undefined,
+    });
+
+    Instance.EntFireAtTarget({
+        target: buttonText,
+        input: "setmessage",
+        value: "New text",
+        delay: 0,
+    });
+    return {entity: button, text: buttonText};
+};
 
 Instance.OnGrenadeThrow((event) => {
 	// const owner = event.weapon.GetOwner();

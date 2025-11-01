@@ -20,7 +20,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "types": [
-      "@wonfsy/cs-script-extensions/types",
+      // "@wonfsy/cs-script-extensions/types",
       "../../csgo/maps/editor/zoo/scripts/point_script.d.ts"
     ]
   },

@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { defineConfig } from '@rsbuild/core';
-import { Compiler, Compilation, sources } from '@rspack/core';
+import { Compiler, Compilation, sources, IgnorePlugin } from '@rspack/core';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -66,30 +66,19 @@ export default defineConfig(() => {
         js: '[name].js',
       },
     },
+    
     performance: {
       chunkSplit: {
         strategy: 'all-in-one',
       },
     },
     tools: {
-      bundlerChain: (chain) => {
-        chain.module
-          .rule('remove-specific-import')
-          .test(/\.(ts|js)$/)
-          .use('string-replace-loader')
-          .loader('string-replace-loader')
-          .options({
-            search: /import .* from "cs_script\/point_script"/g,
-            replace: '',
-          })
-          .end();
-
-        chain.output.library('[name]').libraryTarget('var');
-
-        chain
-          .plugin('add-import-after-minification')
-          .use(AddImportAfterMinificationPlugin);
-      },
+    //   rspack: (config) => {
+    //   config.externals = {
+    //     "cs_script/point_script": "commonjs cs_script/point_script",
+    //   };
+    //   config.externals = "module";
+    // },
       htmlPlugin: false,
     },
   }
