@@ -1,7 +1,10 @@
-import { BaseModelEntity, CSPlayerController, Instance } from "cs_script/point_script";
+import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
 
-const playerButtonPrefix = "player_button_";
-const playerNamePrefix = "player_name_";
+const ctTeam = 3;
+const tTeam = 2;
+const buttonOffset = 25;
+const playerButtonNamePrefix = "test_player_button_";
+const playerButtonTextNamePrefix = "test_player_button_text_";
 
 interface Player {
 	id: number;
@@ -9,20 +12,29 @@ interface Player {
 	name: string;
 	currentTeam: number;
 	teamToJoinWhenGameStart: number;
+    playerButton: PlayerButton;
+	playerController: CSPlayerController;
+}
+
+interface PlayerButton {
+	buttonName: string;
+	buttonTextName: string;
 }
 
 interface Configuration {
 	players: Player[];
 	gameHasStarted: boolean;
+	queuedActions: (() => void)[];
 }
 
 let configuration: Configuration = {
 	players: [],
 	gameHasStarted: false,
+	queuedActions: [],
 };
 
-const findById = (id: number): Player | undefined =>
-	configuration.players.find((player) => player.id === id);
+const findById = (id: number): Player | undefined => configuration.players.find((player) => player.id === id);
+const findByButtonName = (button: string): Player | undefined => configuration.players.find((player) => player.playerButton.buttonName === button);
 
 const upsertFromController = (controller: CSPlayerController): Player => {
 	const id = controller.GetPlayerSlot();
@@ -37,11 +49,16 @@ const upsertFromController = (controller: CSPlayerController): Player => {
 			isBot,
 			name,
 			currentTeam: team,
-			teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? 3 : 2,
+			playerController: controller,
+			teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? ctTeam : tTeam,
+            playerButton: createPlayerButton({position: {x:-15792, y:-14912, z:-15759}, id: id.toString()})!,
 		};
 		configuration.players.push(player);
 		Instance.Msg(`Player added: ${name} (id=${id}, bot=${isBot}, team=${team})`);
 		return player;
+	}
+	else{
+		Instance.Msg(`Player updated: ${name} (id=${id}, bot=${isBot}, team=${team})`);
 	}
 
 	existing.isBot = isBot;
@@ -57,6 +74,7 @@ const removeById = (id: number): void => {
 	}
 
 	const [removed] = configuration.players.splice(index, 1);
+	killPlayerButton(removed.playerButton);
 	Instance.Msg(`Player removed: ${removed.name} (id=${id})`);
 };
 
@@ -69,73 +87,51 @@ const updateUi = (): void => {
 		return;
 	}
 
-	let idleAnchor;
 	let tOffset = 0;
 	let ctOffset = 0;
 
-	const maxPlayers = 16;
-	for (let index = 0; index < maxPlayers; index += 1) {
-		const player = configuration.players[index];
-		const playerButton = Instance.FindEntityByName(`${playerButtonPrefix}${index}`);
+	Instance.Msg(`Updating UI for ${configuration.players.length} players`);
 
-		if (!playerButton) {
-			Instance.Msg(`Cannot find ${playerButtonPrefix}${index}`);
+	for (let i = 0; i < configuration.players.length; i++) {
+		const player = configuration.players[i];
+		const playerButton = Instance.FindEntityByName(player.playerButton.buttonName);
+		const playerButtonText = Instance.FindEntityByName(player.playerButton.buttonTextName);
+		if (!playerButton || !playerButtonText) {
+			Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
+			createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()}); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
+			runNextThink(updateUi);
 			continue;
 		}
 
-		if (player) {
-			const anchor: Entity = (player.teamToJoinWhenGameStart === 3 ? ctAnchor : tAnchor)!;
-			if (anchor === tAnchor) {
-				tOffset -= 25;
-			} else {
-				ctOffset -= 25;
-			}
-
-			const base = anchor.GetAbsOrigin();
-			playerButton.Teleport({
-				position: {
-					x: base.x,
-					y: base.y,
-					z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-				},
-				angles: undefined,
-				velocity: undefined,
-			});
-
-			const namePrefix = player.isBot ? "BOT " : "";
-			Instance.EntFireAtName({
-				name: `${playerNamePrefix}${index}`,
-				input: "setmessage",
-				value: `${namePrefix}${player.name}`,
-				delay: 0,
-			});
-			continue;
+		const anchor: Entity = (player.teamToJoinWhenGameStart === ctTeam ? ctAnchor : tAnchor)!;
+		if (anchor === tAnchor) {
+			tOffset -= buttonOffset;
+		} else {
+			ctOffset -= buttonOffset;
 		}
-
-		if (!idleAnchor) {
-			idleAnchor = Instance.FindEntityByName("player_button_idle_position");
-			if (!idleAnchor) {
-				Instance.Msg("Cannot find player_button_idle_position");
-				continue;
-			}
-		}
-
-		Instance.Msg(`Updating for empty${index}`);
-		const base = idleAnchor.GetAbsOrigin();
+		const base = anchor.GetAbsOrigin();
 		playerButton.Teleport({
 			position: {
 				x: base.x,
 				y: base.y,
-				z: base.z + index * -25,
-			},
-			angles: undefined,
-			velocity: undefined,
+				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+			}
 		});
 
-		Instance.EntFireAtName({
-			name: `${playerNamePrefix}${index}`,
+		const namePrefix = player.isBot ? "BOT " : "";
+
+		playerButtonText.Teleport({
+			position: {
+				x: base.x,
+				y: base.y,
+				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+			}
+		});
+
+		Instance.EntFireAtTarget({
+			target: playerButtonText,
 			input: "setmessage",
-			value: "Empty",
+			value: `${namePrefix}${player.name}`,
 			delay: 0,
 		});
 	}
@@ -144,15 +140,14 @@ const updateUi = (): void => {
 const updatePlayerTeams = (): void => {
 	for (const player of configuration.players) {
 		const desiredTeam = player.teamToJoinWhenGameStart;
-		const controller = Instance.GetPlayerController(player.id);
 
-		if (!controller?.IsValid?.()) {
+		if (!player.playerController?.IsValid?.()) {
 			Instance.Msg(`No valid controller found for player id=${player.id}, skipping team change.`);
 			continue;
 		}
 
 		try {
-			controller.JoinTeam(desiredTeam);
+			player.playerController.JoinTeam(desiredTeam);
 			player.currentTeam = desiredTeam;
 			Instance.Msg(`Moved player: ${player.name} (id=${player.id}) to team ${desiredTeam}`);
 		} catch (error) {
@@ -168,7 +163,7 @@ Instance.OnPlayerConnect((event) => {
 	}
 
 	upsertFromController(playerController);
-	updateUi();
+	runNextThink(updateUi);
 });
 
 Instance.OnRoundStart(() => {
@@ -182,7 +177,7 @@ Instance.OnPlayerActivate((event) => {
 	}
 
 	upsertFromController(playerController);
-	updateUi();
+	runNextThink(updateUi);
 });
 
 Instance.OnPlayerDisconnect((event) => {
@@ -191,45 +186,45 @@ Instance.OnPlayerDisconnect((event) => {
 	}
 
 	removeById(event.playerSlot);
-	updateUi();
+	runNextThink(updateUi);
 });
 
 Instance.OnActivate(() => {
 	const maxSlots = 100;
-	for (let slot = 0; slot < maxSlots; slot += 1) {
-		const controller = Instance.GetPlayerController(slot);
-		if (controller?.IsValid?.()) {
-			upsertFromController(controller);
-		}
-	}
-
-	updateUi();
+	runNextThink(() => {
+		for (let slot = 0; slot < maxSlots; slot += 1) 
+		{
+			const controller = Instance.GetPlayerController(slot);
+			if (controller && controller?.IsValid()) {
+				upsertFromController(controller);
+			}
+		}	
+		runNextThink(updateUi);
+	});
 });
 
 Instance.OnScriptInput("TogglePlayerTeam", (event) => {
-	const buttonEntity = event.caller as (BaseModelEntity & {
-		SetHealth?(value: number): void;
-	}) | undefined;
-	const buttonName = buttonEntity?.GetEntityName();
-
-	if (!buttonName) {
+	const buttonEntity = event.caller;
+	if (!buttonEntity) {
+		Instance.Msg(`Cannot identify button entity from caller`);
 		return;
 	}
 
-	buttonEntity?.SetHealth?.(1000);
-
-	const playerIndex = Number(buttonName.replace(playerButtonPrefix, ""));
-	if (Number.isNaN(playerIndex)) {
-		return;
-	}
-
-	const player = configuration.players[playerIndex];
+	let player = findByButtonName(buttonEntity.GetEntityName());
 	if (!player) {
+		Instance.Msg(`Cannot find player associated with button entity`);
 		return;
 	}
 
-	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === 3 ? 2 : 3;
-	updateUi();
+	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === ctTeam ? tTeam : ctTeam;
+	killPlayerButton(player.playerButton); //Moving buttons that have been pressed results in a button that slowly slides away for some reason so we just destroy and recreate it.
+	runNextThink(() => {
+		var newPlayerButton = createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()});
+		if (newPlayerButton) {
+			player.playerButton = newPlayerButton;
+		}
+		runNextThink(updateUi);
+	});
 });
 
 Instance.OnScriptInput("StartGame", () => {
@@ -245,6 +240,75 @@ Instance.OnScriptReload({
 		}
 	},
 });
+
+const killPlayerButton = (playerButton: PlayerButton) => {
+	Instance.EntFireAtName({
+		name: playerButton.buttonName,
+		input: "kill",
+	});
+	Instance.EntFireAtName({
+		name: playerButton.buttonTextName,
+		input: "kill",
+	});
+};
+
+const createPlayerButton = (data: {position: Vector, id:string}): PlayerButton | null => {
+
+    const template = Instance.FindEntityByName("player_button_point_template");
+    if (!template) {
+        Instance.Msg("player_button_point_template not found");
+        return null;
+    }
+
+    if (!(template instanceof PointTemplate)) {
+        Instance.Msg("player_button_point_template is not of type point template");
+        return null;
+    }
+
+
+    const spawned = template.ForceSpawn(data.position);
+    if (!spawned || spawned.length < 2) {
+        return null;
+    }
+
+    const [button, buttonText] = spawned;
+
+    button.Teleport({
+        position: data.position,
+    });
+
+    buttonText.Teleport({
+        position: data.position,
+    });
+	Instance.Msg("Created player button!!!");
+    Instance.EntFireAtTarget({
+        target: buttonText,
+        input: "setmessage",
+        value: "New text",
+        delay: 0,
+    });
+	let buttonName = playerButtonNamePrefix + data.id;
+	let buttonTextName = playerButtonTextNamePrefix + data.id;
+	button.SetEntityName(buttonName);
+	buttonText.SetEntityName(buttonTextName);
+    return {buttonName: buttonName, buttonTextName: buttonTextName};
+};
+
+
+const runNextThink = (action: () => void) => {
+  configuration.queuedActions.push(action);
+}
+
+
+Instance.SetThink(() => {
+  const actions = configuration.queuedActions.splice(0, configuration.queuedActions.length);
+
+  for (let i=0;i!=actions.length;i++) {
+      actions[i]();
+  }
+  Instance.SetNextThink(Instance.GetGameTime());
+});
+Instance.SetNextThink(Instance.GetGameTime());
 
 Instance.OnGrenadeThrow((event) => {
 	// const owner = event.weapon.GetOwner();

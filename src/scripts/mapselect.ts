@@ -1,6 +1,5 @@
 import { BaseModelEntity, Instance } from "cs_script/point_script";
 
-
 var maps = [
     "de_overpass",
     "de_dust2",
