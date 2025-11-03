@@ -1,21 +1,15 @@
 {
-  "name": "cs_script_template",
+  "name": "cs2_but_damage_throws_nades",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rsbuild build",
-    "dev": "rsbuild build --watch",
-    "preview": "rsbuild preview"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "tsc --watch"
   },
   "devDependencies": {
-    "@rsbuild/core": "^1.5.6",
-    "@rspack/cli": "^1.5.5",
-    "@types/node": "^24.5.2",
-    "string-replace-loader": "^3.2.0",
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "@wonfsy/cs-script-extensions": "^0.1.0"
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
   }
 }
