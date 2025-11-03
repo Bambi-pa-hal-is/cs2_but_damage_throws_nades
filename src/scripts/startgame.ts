@@ -30,6 +30,8 @@ const warmupSettings = () => {
     Instance.ServerCommand("weapon_accuracy_nospread 1");
     Instance.ServerCommand("mp_warmup_offline_enabled 1");
     Instance.ServerCommand("mp_warmup_pausetimer 1");
+    Instance.ServerCommand("sv_autobunnyhopping 1");
+    Instance.ServerCommand("sv_enablebunnyhopping 1");
     if(!Instance.IsWarmupPeriod()) {
         Instance.ServerCommand("mp_warmup_start");
     }
@@ -40,6 +42,8 @@ const resetWarmupSettings = () => {
     Instance.ServerCommand("sv_infinite_ammo 0");
     Instance.ServerCommand("weapon_accuracy_nospread 0");
     Instance.ServerCommand("mp_warmup_end");
+    Instance.ServerCommand("sv_autobunnyhopping 0");
+    Instance.ServerCommand("sv_enablebunnyhopping 0");
     Instance.ServerCommand("sv_cheats 0");
 };
 
