@@ -32,6 +32,7 @@ const warmupSettings = () => {
     Instance.ServerCommand("mp_warmup_pausetimer 1");
     Instance.ServerCommand("sv_autobunnyhopping 1");
     Instance.ServerCommand("sv_enablebunnyhopping 1");
+    Instance.ServerCommand("mp_autokick 0");
     if(!Instance.IsWarmupPeriod()) {
         Instance.ServerCommand("mp_warmup_start");
     }
@@ -44,6 +45,7 @@ const resetWarmupSettings = () => {
     Instance.ServerCommand("mp_warmup_end");
     Instance.ServerCommand("sv_autobunnyhopping 0");
     Instance.ServerCommand("sv_enablebunnyhopping 0");
+    Instance.ServerCommand("mp_autokick 0");
     Instance.ServerCommand("sv_cheats 0");
 };
 

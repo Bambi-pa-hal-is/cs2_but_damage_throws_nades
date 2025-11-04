@@ -1,6 +1,4 @@
-// @ts-nocheck
-
-import { BaseModelEntity, CSPlayerController, Instance, PointTemplate } from "cs_script/point_script";
+import { BaseModelEntity, CSGearSlot, CSPlayerController, CSPlayerPawn, Entity, Instance, PointTemplate } from "cs_script/point_script";
 
 var configuration = {
     throwGrenadeWhenShooting: false,
@@ -13,11 +11,12 @@ var configuration = {
     isMolotovAllowed: true,
     isDecoyAllowed: false,
     onlyEquippedNades: true,
-    projectileSpeed: 1300,
+    projectileSpeed: 675.0,
 }
 
-function updateCheck(show, entityName)
-{
+type nadeTemplate = "molotov_point_template" | "flashbang_point_template" | "hegrenade_point_template" | "smokegrenade_point_template" | "decoy_point_template";
+
+const updateCheck = (show: boolean, entityName: string) => {
     var check = Instance.FindEntityByName(entityName + "_check");
     if(check instanceof BaseModelEntity)
     {
@@ -26,8 +25,7 @@ function updateCheck(show, entityName)
     }
 }
 
-function updatePercentageText(entityName, percent)
-{
+const updatePercentageText = (entityName: string, percent: number) => {
     var text = Math.floor(percent * 100) + "%";
     Instance.EntFireAtName(entityName, "setmessage",text,0);
 }
@@ -113,9 +111,9 @@ Instance.OnScriptInput("toggle_only_equipped_nades", () => {
 });
 
 
-function deg2rad(deg) { return (deg * Math.PI) / 180.0; }
+const deg2rad = (deg: number) => { return (deg * Math.PI) / 180.0; }
 
-function forwardFromAngles(ang) {
+const forwardFromAngles = (ang: { pitch: number; yaw: number; }) => {
     // Source pitch: +down, -up. Roll unused for forward vector.
     const cp = Math.cos(deg2rad(ang.pitch));
     const sp = Math.sin(deg2rad(ang.pitch));
@@ -124,65 +122,122 @@ function forwardFromAngles(ang) {
     return { x: cp * cy, y: cp * sy, z: -sp };
 }
 
-function vecScale(v, s) { return { x: v.x * s, y: v.y * s, z: v.z * s }; }
+const vecScale = (v: { x: number; y: number; z: number; }, s: number) => {
+    return { x: v.x * s, y: v.y * s, z: v.z * s };
+};
 
-// --- main hook ---
-// TA INTE BORT/// DET FUNGERA FÖR FLASH
-Instance.OnGunFire((event) => {
-    const owner = event.weapon.GetOwner();
-    if (!owner) return;
 
-    const controller = owner.GetOriginalPlayerController();
-    if (!controller) return;
-
-    const template = Instance.FindEntityByName("molotov_template");
+const throwNadeForPlayer = (pawn: CSPlayerPawn, templateName: nadeTemplate) : Entity | undefined => {
+    const template = Instance.FindEntityByName(templateName);
     if (!template) {
-        Instance.Msg("molotov_template not found");
+        Instance.Msg(`${templateName} not found`);
         return;
     }
     if(!(template instanceof PointTemplate))
     {
-        Instance.Msg("molotov_template is not of type point template");
+        Instance.Msg(`${templateName} is not of type point template`);
         return;
     }
-
-    const eyePos = owner.GetEyePosition();
-    const eyeAng = owner.GetEyeAngles();
+    const eyePos = pawn.GetEyePosition();
+    const eyeAng = pawn.GetEyeAngles();
     const fwd = forwardFromAngles(eyeAng);
-    const velocity = vecScale(fwd, configuration.projectileSpeed);
+    let velocity = vecScale(fwd, configuration.projectileSpeed);
+    const playerVelocity = pawn.GetAbsVelocity();
+    velocity.x += playerVelocity.x;
+    velocity.y += playerVelocity.y;
+    velocity.z += playerVelocity.z;
 
     const spawned = template.ForceSpawn(eyePos,eyeAng);
     if (!spawned || spawned.length === 0) return;
+    const nade = spawned[0]; 
 
-    const molotov = spawned[0]; 
-
-    molotov.SetOwner(owner); //Does this even do anything?!?!
-    molotov.Teleport({
+    nade.SetOwner(pawn); //Does this even do anything?!?!
+    nade.Teleport({
         position: eyePos,
         angles: eyeAng,
         velocity: velocity
     });
     //according to the wiki this is supposed to activate the grenade but it does not https://developer.valvesoftware.com/wiki/Molotov_projectile
     Instance.EntFireAtTarget({ 
-        target: molotov,
+        target: nade,
         input: "InitializeSpawnFromWorld",
-        activator: owner,
-        caller: owner,
+        activator: pawn,
+        caller: pawn,
         delay: 0
     });
-        Instance.EntFireAtTarget({ 
-        target: molotov,
+    Instance.EntFireAtTarget({ 
+        target: nade,
         input: "kill",
-        activator: owner,
-        caller: owner,
-        delay: 3
+        delay: 10.0
     });
+    return nade;
+}; 
+
+const getRandomAllowedNadeTemplate = () : nadeTemplate | null => {
+    const allowedNades : nadeTemplate[] = [];
+
+    if (configuration.isHeAllowed) allowedNades.push("hegrenade_point_template");
+    if (configuration.isFlashbangAllowed) allowedNades.push("flashbang_point_template");
+    if (configuration.isSmokeAllowed) allowedNades.push("smokegrenade_point_template");
+    if (configuration.isMolotovAllowed) allowedNades.push("molotov_point_template");
+    if (configuration.isDecoyAllowed) allowedNades.push("decoy_point_template");
+
+    if (allowedNades.length === 0) return null;
+
+    const randomIndex = Math.floor(Math.random() * allowedNades.length);
+    return allowedNades[randomIndex];
+};
+
+// --- main hook ---
+// TA INTE BORT/// DET FUNGERA FÖR FLASH
+Instance.OnGunFire((event) => {
+    const shooter = event.weapon.GetOwner();
+    if (!shooter) return;
+
+    var randomValue = Math.random();
+    if(configuration.throwGrenadeWhenShooting && randomValue < configuration.chanceToThrowGrenadeWhenShooting)
+    {
+        //throw nade
+        var nadeTemplateName = getRandomAllowedNadeTemplate();
+        if(!nadeTemplateName) return;
+        throwNadeForPlayer(shooter, nadeTemplateName);
+    }
 });
 
+Instance.OnBeforePlayerDamage((event) => {
 
-Instance.OnScriptInput("player_hurt", (caller) => {
-    Instance.Msg("Player hurt event");
+    var attacker = event.attacker;
+    if (!attacker) return;
+    if (!(attacker instanceof CSPlayerPawn))
+    {
+        Instance.Msg("attacker not playercontroller");
+        return;
+    }
+    var randomValue = Math.random();
+    if(configuration.throwGrenadeWhenDealingDamage && randomValue < configuration.chanceToThrowGrenadeWhenDealingDamage)
+    {
+        //throw nade
+        var nadeTemplateName = getRandomAllowedNadeTemplate();
+        if(!nadeTemplateName) return;
+        throwNadeForPlayer(attacker, nadeTemplateName);
+    }
 });
+
+// Instance.OnScriptInput("player_hurt", (event) => {
+//     const attacker = event.activator;
+//     if (!attacker) return;
+//     Instance.Msg("player_hurt by " + event?.activator?.GetClassName());
+//     if (!(attacker instanceof CSPlayerPawn)) return;
+
+//     var randomValue = Math.random();
+//     if(configuration.throwGrenadeWhenShooting && randomValue < configuration.chanceToThrowGrenadeWhenShooting)
+//     {
+//         //throw nade
+//         var nadeTemplateName = getRandomAllowedNadeTemplate();
+//         if(!nadeTemplateName) return;
+//         throwNadeForPlayer(attacker, nadeTemplateName);
+//     }
+// });
 
 
 Instance.OnScriptReload({
@@ -196,6 +251,11 @@ Instance.OnScriptReload({
     },
 });
 
+Instance.OnGrenadeThrow((event) => {
+    var velocity = event.projectile.GetAbsVelocity();
+    var speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+    Instance.Msg("Grenade thrown with speed: " + speed);
+});
 
 // Instance.SetNextThink(Instance.GetGameTime());
 
