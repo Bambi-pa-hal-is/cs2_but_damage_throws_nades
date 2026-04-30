@@ -12,7 +12,8 @@ var maps = [
     "de_ancient_night",
     "de_anubis",
     "cs_office",
-    "cs_italy"
+    "cs_italy",
+    "de_cache"
 ];
 
 var configuration = {
