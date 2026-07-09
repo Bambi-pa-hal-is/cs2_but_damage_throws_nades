@@ -45,6 +45,7 @@ Instance.OnScriptInput("StartGame", (caller) => {
     {
         Instance.ServerCommand("sv_cheats 1");
         Instance.ServerCommand("spawn_group_load " + configuration.selectedMap);
+        Instance.ServerCommand("spawn_group_load " + configuration.selectedMap);
         configuration.gameHasStarted = true;
         Instance.ServerCommand("sv_cheats 0");
     }

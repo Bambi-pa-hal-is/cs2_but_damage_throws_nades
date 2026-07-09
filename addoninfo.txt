@@ -1,0 +1,12 @@
+{
+    HideInTools = false
+    IsPlayable = true
+    IsTemplate = false
+    maps =
+    [
+        "but_damage_throws_nades"
+    ]
+    gamemodes = [ ]
+    custom_cfg = "maps/de_nuke.cfg"
+    map_extentions = null
+}

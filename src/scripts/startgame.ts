@@ -13,6 +13,7 @@ Instance.OnScriptInput("StartGame", (_) => {
     configuration.gameHasStarted = true;
     disableSpawns();
     resetWarmupSettings();
+    Instance.ServerCommand("mp_shoot_dropped_grenades 1");
 });
 
 Instance.OnRoundStart(() => {
@@ -24,6 +25,8 @@ Instance.OnRoundStart(() => {
 
 const warmupSettings = () => {
     Instance.ServerCommand("sv_cheats 1");
+    Instance.ServerCommand("mp_shoot_dropped_grenades 1");
+    Instance.ServerCommand("sv_disable_radar 1");
     Instance.ServerCommand("mp_autoteambalance 0");
     Instance.ServerCommand("mp_limitteams 0");
     Instance.ServerCommand("sv_infinite_ammo 1");
