@@ -1,4 +1,6 @@
 import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
+import { setEntityMessage } from "../shared/ui";
 
 const ctTeam = 3;
 const tTeam = 2;
@@ -15,6 +17,7 @@ interface Player {
     playerButton: PlayerButton;
 	playerController: CSPlayerController;
 }
+
 
 interface PlayerButton {
 	buttonName: string;
@@ -128,12 +131,7 @@ const updateUi = (): void => {
 			}
 		});
 
-		Instance.EntFireAtTarget({
-			target: playerButtonText,
-			input: "setmessage",
-			value: `${namePrefix}${player.name}`,
-			delay: 0,
-		});
+		setEntityMessage(playerButtonText, `${namePrefix}${player.name}`);
 	}
 };
 
@@ -232,13 +230,8 @@ Instance.OnScriptInput("StartGame", () => {
 	updatePlayerTeams();
 });
 
-Instance.OnScriptReload({
-	before: () => ({ configuration }),
-	after: (memory) => {
-		if (memory?.configuration) {
-			configuration = memory.configuration;
-		}
-	},
+persistOnReload({
+	configuration: { get: () => configuration, set: (value) => { configuration = value; } },
 });
 
 const killPlayerButton = (playerButton: PlayerButton) => {
@@ -281,12 +274,7 @@ const createPlayerButton = (data: {position: Vector, id:string}): PlayerButton |
         position: data.position,
     });
 	Instance.Msg("Created player button!!!");
-    Instance.EntFireAtTarget({
-        target: buttonText,
-        input: "setmessage",
-        value: "New text",
-        delay: 0,
-    });
+    setEntityMessage(buttonText, "New text");
 	let buttonName = playerButtonNamePrefix + data.id;
 	let buttonTextName = playerButtonTextNamePrefix + data.id;
 	button.SetEntityName(buttonName);

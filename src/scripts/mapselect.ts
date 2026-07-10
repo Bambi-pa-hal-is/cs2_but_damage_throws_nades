@@ -1,4 +1,6 @@
 import { BaseModelEntity, Instance } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
+import { setEntityMessage } from "../shared/ui";
 
 var maps = [
     "de_overpass",
@@ -63,12 +65,7 @@ const enableStartButton = () => {
         var startButtonText = Instance.FindEntityByName("start_button_text");
         if(startButtonText)
         {
-            Instance.EntFireAtTarget({
-                target: startButtonText,
-                input: "setmessage",
-                value: "Press E to start",
-                delay: 0
-            });
+            setEntityMessage(startButtonText, "Press E to start");
         }
     }
 }
@@ -84,13 +81,6 @@ Instance.OnRoundStart(() => {
     }
 });
 
-Instance.OnScriptReload({
-    before: () => {
-        return { configuration };
-    },
-    after: (memory) => {
-        if (memory && memory.configuration !== undefined) {
-            configuration = memory.configuration;
-        }
-    },
+persistOnReload({
+    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
 });

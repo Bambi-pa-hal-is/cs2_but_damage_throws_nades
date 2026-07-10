@@ -1,4 +1,5 @@
 import { Instance } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
 
 var configuration = {
     gameHasStarted: false,
@@ -59,13 +60,6 @@ const disableSpawns = () => {
     Instance.EntFireAtName({name: "configuration_spawn", input: "toggleenabled"});
 }
 
-Instance.OnScriptReload({
-    before: () => {
-        return { configuration };
-    },
-    after: (memory) => {
-        if (memory && memory.configuration !== undefined) {
-            configuration = memory.configuration;
-        }
-    },
+persistOnReload({
+    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
 });

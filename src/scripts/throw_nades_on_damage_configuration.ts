@@ -1,4 +1,6 @@
 import { BaseModelEntity, CSDamageTypes, CSGearSlot, CSPlayerController, CSPlayerPawn, Entity, Instance, PointTemplate, type QAngle, type Vector } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
+import { setEntityMessageByName } from "../shared/ui";
 
 var configuration = {
     throwGrenadeWhenShooting: false,
@@ -64,7 +66,7 @@ const updateCheck = (show: boolean, entityName: string) => {
 
 const updatePercentageText = (entityName: string, percent: number) => {
     var text = Math.floor(percent * 100) + "%";
-    Instance.EntFireAtName(entityName, "setmessage",text,0);
+    setEntityMessageByName(entityName, text);
 }
 
 Instance.OnActivate(() => {
@@ -428,21 +430,10 @@ Instance.OnBeforePlayerDamage((event) => {
     }
 });
 
-Instance.OnScriptReload({
-    before: () => {
-        return { configuration, pendingDetonations, thrownProjectiles };
-    },
-    after: (memory) => {
-        if (memory && memory.configuration !== undefined) {
-            configuration = memory.configuration;
-        }
-        if (memory && memory.pendingDetonations !== undefined) {
-            pendingDetonations = memory.pendingDetonations;
-        }
-        if (memory && memory.thrownProjectiles !== undefined) {
-            thrownProjectiles = memory.thrownProjectiles;
-        }
-    },
+persistOnReload({
+    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
+    pendingDetonations: { get: () => pendingDetonations, set: (value) => { pendingDetonations = value; } },
+    thrownProjectiles: { get: () => thrownProjectiles, set: (value) => { thrownProjectiles = value; } },
 });
 
 Instance.OnGrenadeThrow((event) => {
