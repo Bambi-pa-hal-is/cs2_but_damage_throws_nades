@@ -9,7 +9,7 @@ import { getMpShootDroppedGrenadesEnabled, setGameHasStarted } from "../shared/g
 import { playSound } from "../shared/sound";
 
 Instance.OnActivate(() => {
-    Instance.Msg("Script activated!");
+    Instance.Msg("Script activated!!!");
     mapselect.onActivate();
     startgame.onActivate();
     throwNadesOnDamage.onActivate();
