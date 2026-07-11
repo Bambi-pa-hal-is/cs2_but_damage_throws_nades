@@ -1,7 +1,7 @@
 import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { setEntityMessage } from "../shared/ui";
-import { setGameHasStarted } from "../shared/gamestate";
+import { getPlayers, refreshPlayers, setGameHasStarted } from "../shared/gamestate";
 import * as timers from "../shared/timers";
 
 const ctTeam = 3;
@@ -164,7 +164,7 @@ Instance.OnPlayerConnect((event) => {
 
 export const onRoundStart = () => {
 	timers.setTimeout(() => {
-		loadAllPlayers();
+		syncPlayersFromGameState();
 		timers.setTimeout(updateUi, 0);
 	}, 0);
 };
@@ -188,20 +188,16 @@ Instance.OnPlayerDisconnect((event) => {
 	timers.setTimeout(updateUi, 0);
 });
 
-const loadAllPlayers = (): void => {
-	const maxSlots = 100;
-	for (let slot = 0; slot < maxSlots; slot += 1)
-	{
-		const controller = Instance.GetPlayerController(slot);
-		if (controller && controller?.IsValid()) {
-			upsertFromController(controller);
-		}
+const syncPlayersFromGameState = (): void => {
+	refreshPlayers();
+	for (const controller of getPlayers()) {
+		upsertFromController(controller);
 	}
 };
 
 export const onActivate = () => {
 	timers.setTimeout(() => {
-		loadAllPlayers();
+		syncPlayersFromGameState();
 		timers.setTimeout(updateUi, 0);
 	}, 0);
 };
@@ -237,7 +233,7 @@ export const onStartGame = () => {
 persistOnReload("teamconfiguration", {
 	configuration: { get: () => configuration, set: (value) => { configuration = value; } },
 }, () => {
-	loadAllPlayers();
+	syncPlayersFromGameState();
 	timers.setTimeout(updateUi, 0);
 });
 

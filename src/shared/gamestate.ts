@@ -1,5 +1,6 @@
-import { Instance } from "cs_script/point_script";
+import { Instance, type CSPlayerController } from "cs_script/point_script";
 import { persistOnReload } from "./persist";
+import { findConnectedPlayerControllers } from "./players";
 
 let gameHasStarted = false;
 
@@ -14,6 +15,26 @@ const T_TEAM = 2;
 // each group's current enabled state ourselves and only fire the toggle when it actually needs to flip.
 let normalSpawnsEnabled = true;
 let configurationSpawnsEnabled = true;
+
+let players: CSPlayerController[] = [];
+
+export const getPlayers = (): CSPlayerController[] => players;
+
+// Whether an admin has confirmed mp_shoot_dropped_grenades is enabled server-side, per
+// test_mp_shoot_dropped_grenades.ts. The game shouldn't be allowed to start without it.
+let mpShootDroppedGrenadesEnabled = false;
+
+export const getMpShootDroppedGrenadesEnabled = (): boolean => mpShootDroppedGrenadesEnabled;
+
+export const setMpShootDroppedGrenadesEnabled = (value: boolean): void => {
+    mpShootDroppedGrenadesEnabled = value;
+};
+
+// Rescans every player slot. Call this before reading getPlayers() when you need an up to date
+// list - this also catches players who connected before this script had loaded.
+export const refreshPlayers = (): void => {
+    players = findConnectedPlayerControllers();
+};
 
 // configuration_spawn entities are themselves info_player_counterterrorist, so they're excluded here
 // and toggled separately below.
@@ -38,10 +59,8 @@ const setConfigurationSpawnsEnabled = (enabled: boolean) => {
 };
 
 const forceTPlayersToCt = () => {
-    const maxSlots = 100;
-    for (let slot = 0; slot < maxSlots; slot++) {
-        const controller = Instance.GetPlayerController(slot);
-        if (controller && controller.IsValid() && controller.GetTeamNumber() === T_TEAM) {
+    for (const controller of players) {
+        if (controller.IsValid() && controller.GetTeamNumber() === T_TEAM) {
             controller.JoinTeam(CT_TEAM);
         }
     }
@@ -54,6 +73,7 @@ export const applyGameState = (): void => {
     setConfigurationSpawnsEnabled(!gameHasStarted);
 
     if (!gameHasStarted) {
+        refreshPlayers();
         forceTPlayersToCt();
     }
 };
@@ -69,4 +89,6 @@ persistOnReload("gamestate", {
     gameHasStarted: { get: () => gameHasStarted, set: (value) => { gameHasStarted = value; } },
     normalSpawnsEnabled: { get: () => normalSpawnsEnabled, set: (value) => { normalSpawnsEnabled = value; } },
     configurationSpawnsEnabled: { get: () => configurationSpawnsEnabled, set: (value) => { configurationSpawnsEnabled = value; } },
+    players: { get: () => players, set: (value) => { players = value; } },
+    mpShootDroppedGrenadesEnabled: { get: () => mpShootDroppedGrenadesEnabled, set: (value) => { mpShootDroppedGrenadesEnabled = value; } },
 });

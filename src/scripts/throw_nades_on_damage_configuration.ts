@@ -444,6 +444,7 @@ Instance.OnGrenadeThrow((event) => {
 const BOUNCE_VELOCITY_PERCENT_LOSS = 0.15; // fraction of speed lost per bounce, e.g. 0.3 = lose 30%
 const BOUNCE_VELOCITY_FLAT_LOSS = 15; // flat units/sec subtracted per bounce, after the percentage loss
 
+//We need to apply a velocity loss because the friction or something is bugged for projectiles so they slide around forever. This is a workaround to make them slow down and eventually stop moving.
 const applyBounceVelocityLoss = (entity: Entity) => {
     const velocity = entity.GetAbsVelocity();
     const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
@@ -485,39 +486,3 @@ Instance.OnGrenadeBounce((event) => {
 
     detonate({ nadeType: "molotov", projectile: event.projectile, pawn: tracked.pawn, detonateAt: Instance.GetGameTime() });
 });
-
-// Instance.SetNextThink(Instance.GetGameTime());
-
-
-// function createMolotov(weapon)
-// {
-//     //ent_create molotov_projectile {"targetname" "kalle"} (DETTA FUNGERAR och den får targetname!)
-//     const owner = weapon.GetOwner();
-//     if (!owner) return;
-
-//     const controller = owner.GetOriginalPlayerController();
-//     if (!controller) return;
-
-//     const name = Math.floor(Math.random() * 10000) + Instance.GetGameTime();
-//     Instance.ServerCommand(`ent_create molotov_projectile {"targetname" "${name}"}`);
-    
-//     const eyePos = owner.GetEyePosition();
-//     const eyeAng = owner.GetEyeAngles();
-//     const fwd = forwardFromAngles(eyeAng);
-//     const velocity = vecScale(fwd, configuration.projectileSpeed);
-//     // Instance.SetThink(() => {
-
-//     // });
-//     Instance.EntFireAtTarget("kalle", "","",2);
-//     var molotov = Instance.FindEntityByName("kalle");
-//     molotov.Teleport(eyePos, eyeAng, velocity);
-    
-//     // // 2) Spawn the template
-//     // const spawned = template.ForceSpawn(eyePos,eyeAng);
-//     // if (!spawned || spawned.length === 0) return;
-
-//     // // 3) Move the spawned flashbang to the player's eyes
-//     // const flash = spawned[0]; // your template should only spawn one projectile
-
-// }
-
