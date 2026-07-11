@@ -57,6 +57,33 @@ const actionTemplateNameByType: Partial<Record<NadeType, string>> = {
     decoy: "decoy_action_point_template",
 };
 
+// Used to detect which grenades a player actually has equipped (for onlyEquippedNades) and, for the
+// molotov family specifically, whether they're carrying a real molotov or an incendiary.
+const weaponNamesByNadeType: Record<NadeType, string[]> = {
+    he: ["weapon_hegrenade"],
+    flashbang: ["weapon_flashbang"],
+    smoke: ["weapon_smokegrenade"],
+    molotov: ["weapon_molotov", "weapon_incgrenade"],
+    decoy: ["weapon_decoy"],
+};
+
+const isNadeTypeEquipped = (pawn: CSPlayerPawn, nadeType: NadeType): boolean =>
+    weaponNamesByNadeType[nadeType].some((weaponName) => pawn.FindWeapon(weaponName) !== undefined);
+
+const INCENDIARY_WEAPON_NAME = "weapon_incgrenade";
+const INCENDIARY_ACTION_TEMPLATE_NAME = "inc_action_point_template";
+
+// The incendiary grenade's own projectile is bugged and can't be spawned, so the molotov family
+// always launches via the molotov projectile (see projectileTemplateNameByType). But if the player
+// is actually carrying an incendiary rather than a real molotov, the detonation pickup - and
+// therefore the resulting fire - should still look/act like an incendiary.
+const getActionTemplateName = (pawn: CSPlayerPawn, nadeType: NadeType): string | undefined => {
+    if (nadeType === "molotov" && pawn.FindWeapon(INCENDIARY_WEAPON_NAME) !== undefined) {
+        return INCENDIARY_ACTION_TEMPLATE_NAME;
+    }
+    return actionTemplateNameByType[nadeType];
+};
+
 // Condition that decides when a spawned grenade gets force-detonated via damage. He/molotov use a
 // fixed delay; smoke and decoy instead wait until they stop moving (settled on the ground), matching
 // how they'd normally pop once at rest.
@@ -127,13 +154,13 @@ const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector
     return entity;
 };
 
-type PendingDetonation = { nadeType: NadeType; projectile: Entity; pawn: CSPlayerPawn; detonateAt?: number };
+type PendingDetonation = { nadeType: NadeType; projectile: Entity; pawn: CSPlayerPawn; detonateAt?: number; actionTemplateName: string };
 
 var pendingDetonations: PendingDetonation[] = [];
 
-const scheduleDetonation = (nadeType: NadeType, projectile: Entity, pawn: CSPlayerPawn, trigger: DetonationTrigger) => {
+const scheduleDetonation = (nadeType: NadeType, projectile: Entity, pawn: CSPlayerPawn, trigger: DetonationTrigger, actionTemplateName: string) => {
     const detonateAt = trigger.kind === "delay" ? Instance.GetGameTime() + trigger.seconds : undefined;
-    pendingDetonations.push({ nadeType, projectile, pawn, detonateAt });
+    pendingDetonations.push({ nadeType, projectile, pawn, detonateAt, actionTemplateName });
 };
 
 const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => {
@@ -151,12 +178,12 @@ const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => 
 
 // Tracks the type/thrower of every live projectile so other events (e.g. OnGrenadeBounce) can
 // identify which nade type they're dealing with, since those events only expose the entity.
-type ThrownProjectile = { entity: Entity; nadeType: NadeType; pawn: CSPlayerPawn; lastVelocityZ?: number; lastSampleTime?: number };
+type ThrownProjectile = { entity: Entity; nadeType: NadeType; pawn: CSPlayerPawn; actionTemplateName?: string; lastVelocityZ?: number; lastSampleTime?: number };
 
 var thrownProjectiles: ThrownProjectile[] = [];
 
-const trackProjectile = (entity: Entity, nadeType: NadeType, pawn: CSPlayerPawn) => {
-    thrownProjectiles.push({ entity, nadeType, pawn });
+const trackProjectile = (entity: Entity, nadeType: NadeType, pawn: CSPlayerPawn, actionTemplateName?: string) => {
+    thrownProjectiles.push({ entity, nadeType, pawn, actionTemplateName });
 };
 
 const untrackProjectile = (entity: Entity) => {
@@ -220,11 +247,7 @@ const detonate = (pending: PendingDetonation) => {
         Instance.Msg(`${pending.nadeType} projectile was already invalid at detonation time`);
     }
 
-    const actionTemplateName = actionTemplateNameByType[pending.nadeType];
-    if (!actionTemplateName) {
-        Instance.Msg(`No action template configured for ${pending.nadeType}, skipping detonation`);
-        return;
-    }
+    const actionTemplateName = pending.actionTemplateName;
 
     const eyeAng = pending.pawn.GetEyeAngles();
     const pickupGrenade = spawnAndLaunch(actionTemplateName, pending.pawn, position, eyeAng, { x: 0, y: 0, z: 0 });
@@ -284,12 +307,14 @@ const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | u
     const projectile = spawnAndLaunch(projectileTemplateNameByType[nadeType], pawn, eyePos, eyeAng, velocity);
     if (!projectile) return;
 
-    trackProjectile(projectile, nadeType, pawn);
+    // Resolved once, at throw time, so a later weapon switch can't change what the detonation
+    // (scheduled or bounce-triggered) ends up spawning.
+    const actionTemplateName = getActionTemplateName(pawn, nadeType);
+    trackProjectile(projectile, nadeType, pawn, actionTemplateName);
 
     const detonationTrigger = detonationTriggerByNadeType[nadeType];
-    const actionTemplateName = actionTemplateNameByType[nadeType];
     if (detonationTrigger !== undefined && actionTemplateName) {
-        scheduleDetonation(nadeType, projectile, pawn, detonationTrigger);
+        scheduleDetonation(nadeType, projectile, pawn, detonationTrigger, actionTemplateName);
     } else {
         // Self-detonating nades (flashbang/decoy): fall back to the old safety-net kill.
         Instance.EntFireAtTarget({
@@ -302,7 +327,7 @@ const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | u
     return projectile;
 };
 
-const getRandomAllowedNadeType = () : NadeType | null => {
+const getRandomAllowedNadeType = (pawn: CSPlayerPawn) : NadeType | null => {
     const allowedNades : NadeType[] = [];
 
     if (configuration.isHeAllowed) allowedNades.push("he");
@@ -311,10 +336,14 @@ const getRandomAllowedNadeType = () : NadeType | null => {
     if (configuration.isMolotovAllowed) allowedNades.push("molotov");
     if (configuration.isDecoyAllowed) allowedNades.push("decoy");
 
-    if (allowedNades.length === 0) return null;
+    const candidates = configuration.onlyEquippedNades
+        ? allowedNades.filter((nadeType) => isNadeTypeEquipped(pawn, nadeType))
+        : allowedNades;
 
-    const randomIndex = Math.floor(Math.random() * allowedNades.length);
-    return allowedNades[randomIndex];
+    if (candidates.length === 0) return null;
+
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    return candidates[randomIndex];
 };
 
 // --- main hook ---
@@ -329,7 +358,7 @@ Instance.OnGunFire((event) => {
     if(configuration.throwGrenadeWhenShooting && randomValue < configuration.chanceToThrowGrenadeWhenShooting)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType();
+        var nadeType = getRandomAllowedNadeType(shooter);
         if(!nadeType) return;
         throwNadeForPlayer(shooter, nadeType);
     }
@@ -349,7 +378,7 @@ Instance.OnModifyPlayerDamage((event) => {
     if(configuration.throwGrenadeWhenDealingDamage && randomValue < configuration.chanceToThrowGrenadeWhenDealingDamage)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType();
+        var nadeType = getRandomAllowedNadeType(attacker);
         if(!nadeType) return;
         throwNadeForPlayer(attacker, nadeType);
     }
@@ -418,5 +447,11 @@ Instance.OnGrenadeBounce((event) => {
     Instance.Msg(`Molotov bounce #${event.bounces}: start=${JSON.stringify(traceStart)}, end=${JSON.stringify(traceEnd)}, didHit=${trace.didHit}, fraction=${trace.fraction}, hitPos=${JSON.stringify(trace.end)}`);
     if (!trace.didHit) return;
 
-    detonate({ nadeType: "molotov", projectile: event.projectile, pawn: tracked.pawn, detonateAt: Instance.GetGameTime() });
+    detonate({
+        nadeType: "molotov",
+        projectile: event.projectile,
+        pawn: tracked.pawn,
+        detonateAt: Instance.GetGameTime(),
+        actionTemplateName: tracked.actionTemplateName ?? actionTemplateNameByType.molotov!,
+    });
 });
