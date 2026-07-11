@@ -8,7 +8,8 @@
     "watch": "node build.mjs --watch",
     "dev": "node build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "typecheck:watch": "tsc --noEmit --watch"
+    "typecheck:watch": "tsc --noEmit --watch",
+    "copy-cfgs": "node copy-cfgs.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",

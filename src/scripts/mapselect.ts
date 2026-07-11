@@ -1,6 +1,7 @@
 import { BaseModelEntity, Instance } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
-import { setEntityMessage } from "../shared/ui";
+import { addonId } from "../shared/environment";
+import { getGameHasStarted } from "../shared/gamestate";
 
 var maps = [
     "de_overpass",
@@ -18,69 +19,57 @@ var maps = [
     "de_cache"
 ];
 
-var configuration = {
-    gameHasStarted: false,
-    selectedMap: "",
+const loadWorkshopMap = () => {
+    Instance.DebugScreenText({ text: Instance.GetMapName(), x: 25, y: 25, duration: 60 });
+    if (Instance.GetMapName() === "but_damage_throws_nades") {
+        Instance.ServerCommand("map_workshop " + addonId + " de_dust2");
+    }
 };
 
-Instance.OnScriptInput("SelectMap", (caller) => {
-
-    configuration.selectedMap = caller?.caller?.GetEntityName() ?? "";
+const highlightMapButton = (selectedMap: string) => {
     for (var i = 0; i < maps.length; i++) {
         var map = maps[i];
         var mapButton = Instance.FindEntityByName(map);
         if (mapButton instanceof BaseModelEntity) {
-            if (mapButton.GetEntityName() != caller?.caller?.GetEntityName()) {
+            if (map != selectedMap) {
                 mapButton.Unglow();
             }
             else {
                 mapButton.Glow({ r: 0, g: 255, b: 0 });
-                enableStartButton();
             }
         }
     }
+};
+
+// Maps switch instantly on selection, so the currently loaded map is always the selected one.
+const highlightCurrentMap = () => {
+    highlightMapButton(Instance.GetMapName());
+};
+
+export const onActivate = () => {
+    loadWorkshopMap();
+    highlightCurrentMap();
+};
+
+Instance.OnScriptInput("SelectMap", (caller) => {
+    var selectedMap = caller?.caller?.GetEntityName() ?? "";
+    Instance.ServerCommand("map_workshop " + addonId + " " + selectedMap);
+    highlightMapButton(selectedMap);
 });
 
-//Spawn the map when the game starts.
-Instance.OnScriptInput("StartGame", (caller) => {
-    if(!configuration.gameHasStarted) //Dont spawn multiple maps at the same time.
-    {
-        Instance.ServerCommand("sv_cheats 1");
-        Instance.ServerCommand("spawn_group_load " + configuration.selectedMap);
-        Instance.ServerCommand("spawn_group_load " + configuration.selectedMap);
-        configuration.gameHasStarted = true;
-        Instance.ServerCommand("sv_cheats 0");
-    }
-});
-
-const enableStartButton = () => {
-    var startButton = Instance.FindEntityByName("start_button");
-    if(startButton)
-    {
-        Instance.EntFireAtTarget({
-            target: startButton,
-            input: "Enable",
-            value: 0,
-        });
-        var startButtonText = Instance.FindEntityByName("start_button_text");
-        if(startButtonText)
-        {
-            setEntityMessage(startButtonText, "Press E to start");
+export const onRoundStart = () => {
+    if (getGameHasStarted()) {
+        //Disable glow when game has started so players cant see the glow when playing.
+        var mapButton = Instance.FindEntityByName(Instance.GetMapName());
+        if (mapButton instanceof BaseModelEntity) {
+            mapButton.Unglow();
         }
+    } else {
+        highlightCurrentMap();
     }
-}
+};
 
-Instance.OnRoundStart(() => {
-    var mapButton = Instance.FindEntityByName(configuration.selectedMap);
-    if (mapButton && mapButton instanceof BaseModelEntity) {
-        if(configuration.gameHasStarted)//Disable glow when game has started so players cant see the glow when playing.
-        {
-            mapButton.Glow({ r: 0, g: 255, b: 0 });
-        }
-        enableStartButton();
-    }
-});
-
-persistOnReload({
-    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
+persistOnReload("mapselect", {}, () => {
+    loadWorkshopMap();
+    highlightCurrentMap();
 });

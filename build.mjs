@@ -1,14 +1,8 @@
 import * as esbuild from "esbuild";
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
-
-const scriptsDir = "src/scripts";
-const entryPoints = readdirSync(scriptsDir)
-    .filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"))
-    .map((file) => join(scriptsDir, file));
+import { copyCfgs } from "./copy-cfgs.mjs";
 
 const ctx = await esbuild.context({
-    entryPoints,
+    entryPoints: ["src/scripts/index.ts"],
     outdir: "scripts",
     bundle: true,
     format: "esm",
@@ -16,6 +10,7 @@ const ctx = await esbuild.context({
     platform: "neutral",
     external: ["cs_script/point_script"],
     logLevel: "info",
+    plugins: [{ name: "copy-cfgs", setup: (build) => build.onEnd(copyCfgs) }],
 });
 
 if (process.argv.includes("--watch")) {

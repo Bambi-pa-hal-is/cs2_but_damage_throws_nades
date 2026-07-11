@@ -1,6 +1,8 @@
 import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { setEntityMessage } from "../shared/ui";
+import { setGameHasStarted } from "../shared/gamestate";
+import * as timers from "../shared/timers";
 
 const ctTeam = 3;
 const tTeam = 2;
@@ -26,14 +28,10 @@ interface PlayerButton {
 
 interface Configuration {
 	players: Player[];
-	gameHasStarted: boolean;
-	queuedActions: (() => void)[];
 }
 
 let configuration: Configuration = {
 	players: [],
-	gameHasStarted: false,
-	queuedActions: [],
 };
 
 const findById = (id: number): Player | undefined => configuration.players.find((player) => player.id === id);
@@ -102,7 +100,7 @@ const updateUi = (): void => {
 		if (!playerButton || !playerButtonText) {
 			Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
 			createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()}); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
-			runNextThink(updateUi);
+			timers.setTimeout(updateUi, 0);
 			continue;
 		}
 
@@ -161,12 +159,15 @@ Instance.OnPlayerConnect((event) => {
 	}
 
 	upsertFromController(playerController);
-	runNextThink(updateUi);
+	timers.setTimeout(updateUi, 0);
 });
 
-Instance.OnRoundStart(() => {
-	updateUi();
-});
+export const onRoundStart = () => {
+	timers.setTimeout(() => {
+		loadAllPlayers();
+		timers.setTimeout(updateUi, 0);
+	}, 0);
+};
 
 Instance.OnPlayerActivate((event) => {
 	const playerController = event?.player;
@@ -175,7 +176,7 @@ Instance.OnPlayerActivate((event) => {
 	}
 
 	upsertFromController(playerController);
-	runNextThink(updateUi);
+	timers.setTimeout(updateUi, 0);
 });
 
 Instance.OnPlayerDisconnect((event) => {
@@ -184,22 +185,26 @@ Instance.OnPlayerDisconnect((event) => {
 	}
 
 	removeById(event.playerSlot);
-	runNextThink(updateUi);
+	timers.setTimeout(updateUi, 0);
 });
 
-Instance.OnActivate(() => {
+const loadAllPlayers = (): void => {
 	const maxSlots = 100;
-	runNextThink(() => {
-		for (let slot = 0; slot < maxSlots; slot += 1) 
-		{
-			const controller = Instance.GetPlayerController(slot);
-			if (controller && controller?.IsValid()) {
-				upsertFromController(controller);
-			}
-		}	
-		runNextThink(updateUi);
-	});
-});
+	for (let slot = 0; slot < maxSlots; slot += 1)
+	{
+		const controller = Instance.GetPlayerController(slot);
+		if (controller && controller?.IsValid()) {
+			upsertFromController(controller);
+		}
+	}
+};
+
+export const onActivate = () => {
+	timers.setTimeout(() => {
+		loadAllPlayers();
+		timers.setTimeout(updateUi, 0);
+	}, 0);
+};
 
 Instance.OnScriptInput("TogglePlayerTeam", (event) => {
 	const buttonEntity = event.caller;
@@ -216,22 +221,24 @@ Instance.OnScriptInput("TogglePlayerTeam", (event) => {
 
 	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === ctTeam ? tTeam : ctTeam;
 	killPlayerButton(player.playerButton); //Moving buttons that have been pressed results in a button that slowly slides away for some reason so we just destroy and recreate it.
-	runNextThink(() => {
+	timers.setTimeout(() => {
 		var newPlayerButton = createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()});
 		if (newPlayerButton) {
 			player.playerButton = newPlayerButton;
 		}
-		runNextThink(updateUi);
-	});
+		timers.setTimeout(updateUi, 0);
+	}, 0);
 });
 
-Instance.OnScriptInput("StartGame", () => {
-	configuration.gameHasStarted = true;
+export const onStartGame = () => {
 	updatePlayerTeams();
-});
+};
 
-persistOnReload({
+persistOnReload("teamconfiguration", {
 	configuration: { get: () => configuration, set: (value) => { configuration = value; } },
+}, () => {
+	loadAllPlayers();
+	timers.setTimeout(updateUi, 0);
 });
 
 const killPlayerButton = (playerButton: PlayerButton) => {
@@ -281,19 +288,3 @@ const createPlayerButton = (data: {position: Vector, id:string}): PlayerButton |
 	buttonText.SetEntityName(buttonTextName);
     return {buttonName: buttonName, buttonTextName: buttonTextName};
 };
-
-
-const runNextThink = (action: () => void) => {
-  configuration.queuedActions.push(action);
-}
-
-
-Instance.SetThink(() => {
-  const actions = configuration.queuedActions.splice(0, configuration.queuedActions.length);
-
-  for (let i=0;i!=actions.length;i++) {
-      actions[i]();
-  }
-  Instance.SetNextThink(Instance.GetGameTime());
-});
-Instance.SetNextThink(Instance.GetGameTime());

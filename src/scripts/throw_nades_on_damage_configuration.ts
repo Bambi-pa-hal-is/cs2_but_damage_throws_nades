@@ -69,11 +69,11 @@ const updatePercentageText = (entityName: string, percent: number) => {
     setEntityMessageByName(entityName, text);
 }
 
-Instance.OnActivate(() => {
+export const onActivate = () => {
     Instance.ServerCommand("mp_shoot_dropped_grenades 1");
-});
+};
 
-Instance.OnRoundStart(() => {
+export const onRoundStart = () => {
     updateCheck(configuration.throwGrenadeWhenShooting, "throw_a_nade_when_shooting_button");
     updateCheck(configuration.throwGrenadeWhenDealingDamage, "throw_a_nade_when_dealing_damage_button");
     updateCheck(configuration.isHeAllowed, "allow_he_button");
@@ -84,7 +84,7 @@ Instance.OnRoundStart(() => {
     updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
     updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
     updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-})
+};
 
 Instance.OnScriptInput("toggle_throw_nade_when_shooting", () => {
     Instance.Msg("TOGGLE NADE WHEN SHOOTING");
@@ -315,7 +315,7 @@ const detonate = (pending: PendingDetonation) => {
     Instance.EntFireAtTarget({ target: pickupGrenade, input: "kill", delay: 0.5 });
 };
 
-Instance.SetThink(() => {
+export const think = () => {
     const now = Instance.GetGameTime();
     const remaining: PendingDetonation[] = [];
     for (const pending of pendingDetonations) {
@@ -340,10 +340,7 @@ Instance.SetThink(() => {
         updateProjectileGravity(tracked, now);
     }
     thrownProjectiles = thrownProjectiles.filter((p) => p.entity.IsValid());
-
-    Instance.SetNextThink(now);
-});
-Instance.SetNextThink(Instance.GetGameTime());
+};
 
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
     const eyePos = pawn.GetEyePosition();
@@ -430,7 +427,7 @@ Instance.OnBeforePlayerDamage((event) => {
     }
 });
 
-persistOnReload({
+persistOnReload("throw_nades_on_damage_configuration", {
     configuration: { get: () => configuration, set: (value) => { configuration = value; } },
     pendingDetonations: { get: () => pendingDetonations, set: (value) => { pendingDetonations = value; } },
     thrownProjectiles: { get: () => thrownProjectiles, set: (value) => { thrownProjectiles = value; } },
