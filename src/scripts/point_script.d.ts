@@ -5,6 +5,7 @@
  * Next to this file is a `tsconfig.json` file configured for editing JavaScript targetting the current version used by CS2.
  * Place copies of these two files, `point_script.d.ts` and `tsconfig.json`, next to your scripts and some editors will begin providing tooling without further configuration.
  * These two files will be maintained as the cs_script API changes or the JavaScript version in CS2 is updated.
+ * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
  */
 
 /**
@@ -46,13 +47,13 @@ declare module "cs_script/point_script"
         /** Log a message to the console. */
         Msg(text: any): void;
         /** Print some text to the game window. Only works in dev environments. */
-        DebugScreenText(config: { text: any, x: number, y: number, duration?: number, color?: Color }): void;
+        DebugScreenText(config: { text: any, x: number, y: number, duration?: number, color?: ColorArg }): void;
         /** Draw a line in the world. Only works in dev environments. */
-        DebugLine(config: { start: Vector, end: Vector, duration?: number, color?: Color }): void;
+        DebugLine(config: { start: Vector, end: Vector, duration?: number, color?: ColorArg }): void;
         /** Draw a wire sphere in the world. Only works in dev environments. */
-        DebugSphere(config: { center: Vector, radius: number, duration?: number, color?: Color }): void;
+        DebugSphere(config: { center: Vector, radius: number, duration?: number, color?: ColorArg }): void;
         /** Draw an axis aligned box in the world. Only works in dev environments. */
-        DebugBox(config: { mins: Vector, maxs: Vector, duration?: number, color?: Color }): void;
+        DebugBox(config: { mins: Vector, maxs: Vector, duration?: number, color?: ColorArg }): void;
 
         /**
          * Called in Tools mode when the script is reloaded due to changes.
@@ -61,10 +62,31 @@ declare module "cs_script/point_script"
          */
         OnScriptReload<T>(config: { before?: () => T, after?: (memory: T) => void }): void;
 
+        /**
+         * Writes save data associated with this workshop addon.
+         * Will synchronously write to disk every time this is called.
+         */
+        SetSaveData(data: string): void;
+        /**
+         * Retrieves the save data associated with this workshop addon.
+         * Will synchronously read from disk the first time this is called.
+         */
+        GetSaveData(): string;
+
         /** Called at a specified time. Control when this is run using SetNextThink. */
         SetThink(callback: () => void): void;
         /** Set when the OnThink callback should next be run. The exact time will be on the tick nearest to the specified time, which may be earlier or later. */
         SetNextThink(time: number): void;
+
+        /**
+         * Queue up a callback to be invoked once, after all entities have executed their think functions this tick (eg. player input has been handled, projectiles have moved).
+         * This can be useful for delaying until a clean moment when an entity isn't mid-computation and might ignore or misinterpret.
+         * This can be useful for delaying until the world is in a consistent state.
+         * Callbacks queued up during a post entity think callback will be invoked in the same tick.
+         * @experimental This method is experimental and may experience breaking changes.
+         * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
+         */
+        QueueAfterThinks( callback: () => void ): void;
 
         /** Called when the point_script entity is activated */
         OnActivate(callback: () => void): void;
@@ -83,17 +105,26 @@ declare module "cs_script/point_script"
         OnRoundStart(callback: () => void): void;
         /** Called when a team wins a round */
         OnRoundEnd(callback: (event: { winningTeam: number, reason: CSRoundEndReason }) => void): void;
+        /**
+         * Called at the start of cleanup for a round restart
+         * @experimental This method is experimental and may experience breaking changes.
+         * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
+         */
+        OnBeginRoundRestart(callback: () => void): void;
         /** Called when a player plants the c4 */
         OnBombPlant(callback: (event: { plantedC4: Entity, planter: CSPlayerPawn }) => void): void;
         /** Called when a player defuses the c4 */
         OnBombDefuse(callback: (event: { plantedC4: Entity, defuser: CSPlayerPawn }) => void): void;
         /**
-         * Called when a CSPlayerPawn is about to take damage
+         * Called immediately before a CSPlayerPawn takes damage to armor and health.
+         * Called after hitgroup modifications are applied such as headshot multiplier.
+         * This won't be called if the player would take no damage. Such as if they're frozen or invulnerable or if friendly fire would disable the damage.
          * @param callback
-         * Return `{ damage: N }` to modify the amount of damage. Armor and hitgroup modifications will be applied to this new value.
+         * Return `{ damage: N }` to modify the amount of damage.
+         * Return `{ damageFlags: event.damageFlags | CSDamageFlags.IGNORE_ARMOR }` to have the damage pierce armor.
          * Return `{ abort: true }` to cancel the damage event.
          */
-        OnBeforePlayerDamage(callback: (event: BeforePlayerDamageEvent) => BeforePlayerDamageModify | { abort: true } | void): void;
+        OnModifyPlayerDamage(callback: (event: ModifyPlayerDamageEvent) => ModfiyPlayerDamageResult | void): void;
         /** 
          * Called when a player has taken damage.
          */
@@ -112,8 +143,14 @@ declare module "cs_script/point_script"
         OnGunReload(callback: (event: { weapon: CSWeaponBase }) => void): void;
         /** Called when a gun emits bullets. A shotgun will only trigger this once when emitting multiple bullets at once. */
         OnGunFire(callback: (event: { weapon: CSWeaponBase }) => void): void;
-        /** Called when a bullet hits a surface. This will trigger for each bullet and for each impact. Penetrations can cause a single bullet to trigger multiple impacts. */
-        OnBulletImpact(callback: (event: { weapon: CSWeaponBase, position: Vector }) => void): void;
+        /**
+         * Called when a bullet hits a surface.
+         * Penetrations can cause a single bullet to trigger multiple impacts.
+         * This will be called for all impacts of a bullet before any player damage events are called.
+         */
+        OnBulletImpact(callback: (event: { weapon: CSWeaponBase, position: Vector, hitEntity: Entity }) => void): void;
+        /** Called when a weapon is dropped. */
+        OnWeaponDrop(callback: (event: { weapon: CSWeaponBase }) => void): void;
         /** Called when a grenade is thrown. `projectile` is the newly created grenade projectile. */
         OnGrenadeThrow(callback: (event: { weapon: CSWeaponBase, projectile: Entity }) => void): void;
         /** Called when a grenade bounces off a surface. `bounces` is the number of bounces so far. */
@@ -140,6 +177,8 @@ declare module "cs_script/point_script"
         FindEntitiesByClass(className: string): Entity[];
         /** Get the player controller in the given slot. */
         GetPlayerController(playerSlot: number): CSPlayerController | undefined;
+        /** Get all the player controllers. Includes disconnected players. */
+        GetAllPlayerControllers(): CSPlayerController[];
 
         /** Trace a point along a line and detect collisions */
         TraceLine(trace: BaseTraceConfig): TraceResult;
@@ -164,24 +203,36 @@ declare module "cs_script/point_script"
         GetMapName(): string;
         /** Get the number of rounds played in the current game. */
         GetRoundsPlayed(): number;
+        /** Get the time remaining in the current round in seconds. */
+        GetRoundRemainingTime(): number;
+        /** Set the time remaining in the current round in seconds. */
+        SetRoundRemainingTime(time: number): void;
 
         /** Issue the specified command to the specified client. */
         ClientCommand(playerSlot: number, command: string): void;
         /** Issue a command. */
         ServerCommand(command: string): void;
+        /**
+         * Creates a console command that will run the specified callback. The command will only work when sv_cheats is true.
+         * @experimental This method is experimental and may experience breaking changes.
+         * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
+         */
+        RegisterCheatCommand(name: string, callback: (args: string) => void): void;
 
+        /** @deprecated This method will be removed in a future update */
+        OnBeforePlayerDamage(callback: () => any): void;
         /** @deprecated This method will be removed in a future update */
         OnBeforeReload(callback: () => any): void;
         /** @deprecated This method will be removed in a future update */
         OnReload(callback: (memory: any) => void): void;
         /** @deprecated This overload will be removed in a future update */
-        DebugScreenText(text: any, x: number, y: number, duration: number, color: Color): void;
+        DebugScreenText(text: any, x: number, y: number, duration: number, color: ColorArg): void;
         /** @deprecated This overload will be removed in a future update */
-        DebugLine(start: Vector, end: Vector, duration: number, color: Color): void;
+        DebugLine(start: Vector, end: Vector, duration: number, color: ColorArg): void;
         /** @deprecated This overload will be removed in a future update */
-        DebugBox(mins: Vector, maxs: Vector, duration: number, color: Color): void;
+        DebugBox(mins: Vector, maxs: Vector, duration: number, color: ColorArg): void;
         /** @deprecated This overload will be removed in a future update */
-        DebugSphere(center: Vector, radius: number, duration: number, color: Color): void;
+        DebugSphere(center: Vector, radius: number, duration: number, color: ColorArg): void;
         /** @deprecated This method will be removed in a future update */
         GetTraceHit(start: Vector, end: Vector, config?: { ignoreEntity?: Entity, ignorePlayers?: boolean }): TraceResult;
         /** @deprecated This overload will be removed in a future update */
@@ -191,8 +242,10 @@ declare module "cs_script/point_script"
     }
 
     type Vector = { x: number, y: number, z: number };
+    type RotationVector = { x: number, y: number, z: number };
     type QAngle = { pitch: number, yaw: number, roll: number };
-    type Color = { r: number, g: number, b: number, a?: number };
+    type ColorArg = { r: number, g: number, b: number, a?: number };
+    type Color = { r: number, g: number, b: number, a: number };
     type InputValue = boolean | number | string | Vector | Color | undefined;
 
     export enum CSRoundEndReason {
@@ -290,6 +343,7 @@ declare module "cs_script/point_script"
         PREVENT_DEATH = 1 << 3,
         FORCE_DEATH = 1 << 4,
         SUPPRESS_DAMAGE_MODIFICATION = 1 << 5,
+        IGNORE_ARMOR = 1 << 6,
     }
 
     export enum CSHitGroup {
@@ -303,6 +357,23 @@ declare module "cs_script/point_script"
         LEFTLEG,
         RIGHTLEG,
         NECK,
+    }
+
+    export enum CSInputs {
+        NONE = 0,
+        FORWARD = 1 << 0,
+        BACK = 1 << 1,
+        LEFT = 1 << 2,
+        RIGHT = 1 << 3,
+        WALK = 1 << 4,
+        DUCK = 1 << 5,
+        JUMP = 1 << 6,
+        USE = 1 << 7,
+        ATTACK = 1 << 8,
+        ATTACK2 = 1 << 9,
+        RELOAD = 1 << 10,
+        SHOW_SCORES = 1 << 11,
+        LOOK_AT_WEAPON = 1 << 12,
     }
 
     interface BaseTraceConfig {
@@ -357,24 +428,28 @@ declare module "cs_script/point_script"
         hitGroup: CSHitGroup;
     }
 
-    interface BeforePlayerDamageEvent {
+    interface ModifyPlayerDamageEvent {
         /** The victim that is taking damage */
         player: CSPlayerPawn;
-        /** The amount of damage being applied, before armor and hitgroup modifications */
+        /** The amount of damage being applied, after hitgroup modifications and before armor modifications */
         damage: number;
-        /** The type or types of damage. */
+        /** The types of damage. */
         damageTypes: CSDamageTypes;
         /** The flags configuring how to interpret the damage. */
         damageFlags: CSDamageFlags;
+        /** The hit group where the damage occured. */
+        hitGroup: CSHitGroup;
         /** The entity applying the damage. For bullets this is the owner of the gun. For grenades this is the exploding projectile. */
-        inflictor?: Entity;
+        inflictor: Entity;
         /** The entity credited with causing the damage. For bullets this is the shooter. For grenades this is the thrower. */
         attacker?: Entity;
         /** The weapon used. For grenades this will not be present because the weapon is often removed before the projectile explodes. */
         weapon?: CSWeaponBase;
     }
 
-    interface BeforePlayerDamageModify {
+    interface ModfiyPlayerDamageResult {
+        /** If true, stop processing this damage */
+        abort?: boolean;
         /** The amount of damage being applied, before armor and hitgroup modifications */
         damage?: number;
         /** The type or types of damage. */
@@ -386,14 +461,16 @@ declare module "cs_script/point_script"
     interface PlayerDamageEvent {
         /** The victim that has taken damage */
         player: CSPlayerPawn;
-        /** The actual health lost after armor and hitgroup modifications */
+        /** The actual health lost after hitgroup and armor modifications */
         damage: number;
         /** The type or types of damage. */
         damageTypes: CSDamageTypes;
         /** The flags configuring how to interpret the damage. */
         damageFlags: CSDamageFlags;
+        /** The hit group where the damage occured. */
+        hitGroup: CSHitGroup;
         /** The entity applying the damage. For bullets this is the owner of the gun. For grenades this is the exploding projectile. */
-        inflictor?: Entity;
+        inflictor: Entity;
         /** The entity credited with causing the damage. For bullets this is the shooter. For grenades this is the thrower. */
         attacker?: Entity;
         /** The weapon used. For grenades this will not be present because the weapon is often removed before the projectile explodes. */
@@ -418,12 +495,16 @@ declare module "cs_script/point_script"
         GetAbsVelocity(): Vector;
         /** The velocity of this entity relative to its parent. Will be relative to the world if no parent. */
         GetLocalVelocity(): Vector;
+        /** The angular velocity of this entity relative to the world. */
+        GetAbsAngularVelocity(): RotationVector;
+        /** The angular velocity of this entity relative to its parent. Will be relative to the world if no parent. */
+        GetLocalAngularVelocity(): RotationVector;
         /** The angles of the eyes of this entity relative to the world. */
         GetEyeAngles(): QAngle;
         /** The position of the eyes of this entity relative to the world */
         GetEyePosition(): Vector;
         /** Update the physics state of this entity. */
-        Teleport(newValues: { position?: Vector, angles?: QAngle, velocity?: Vector }): void;
+        Teleport(newValues: { position?: Vector, angles?: QAngle, velocity?: Vector, angularVelocity?: RotationVector }): void;
         GetClassName(): string;
         GetEntityName(): string;
         SetEntityName(name: string): void;
@@ -446,7 +527,7 @@ declare module "cs_script/point_script"
         Kill(): void;
         Remove(): void;
 
-        /** @deprecated This method will be removed in a future update */
+        /** @deprecated This overload will be removed in a future update */
         Teleport(newPosition: Vector | null, newAngles: QAngle | null, newVelocity: Vector | null): void;
         /** @deprecated This method will be removed in a future update */
         GetLocalVelcoity(): Vector;
@@ -469,15 +550,25 @@ declare module "cs_script/point_script"
 
     export class BaseModelEntity extends Entity {
         SetModel(modelName: string): void;
+        GetModelName(): string;
         SetModelScale(scale: number): void;
-        SetColor(color: Color): void;
-        Glow(color?: Color): void;
+        GetModelScale(): number;
+        SetColor(color: ColorArg): void;
+        GetColor(): Color;
+        Glow(color?: ColorArg): void;
         Unglow(): void;
+        IsGlowing(): boolean;
     }
 
     export class CSWeaponBase extends BaseModelEntity {
         GetData(): CSWeaponData;
         GetOwner(): CSPlayerPawn | undefined;
+        GetOriginalOwner(): CSPlayerPawn | undefined;
+        GetClipAmmo(): number;
+        SetClipAmmo(ammo: number): void;
+        GetReserveAmmo(): number;
+        SetReserveAmmo(ammo: number): void;
+        IsSilencerOn(): boolean;
     }
 
     export class CSWeaponData {
@@ -486,6 +577,8 @@ declare module "cs_script/point_script"
         GetGearSlot(): CSGearSlot;
         GetPrice(): number;
         GetDamage(): number;
+        GetMaxClipAmmo(): number;
+        GetMaxReserveAmmo(): number;
         /** Maximum distance bullets will travel. */
         GetRange(): number;
         /** Exponential damage drop off from traveling through air. nextDamage = currentDamage * rangeModifier ^ (distance / 500). */
@@ -508,6 +601,11 @@ declare module "cs_script/point_script"
         IsBot(): boolean;
         IsConnected(): boolean;
         JoinTeam(team: number): void;
+
+        AddMoneySpendableNow(amount: number): void;
+        GetMoneySpendableNow(): number;
+        AddMoneyEarnedForNextRound(amount: number): void;
+        GetMoneyEarnedForNextRound(): number;
     }
 
     export class CSObserverPawn extends BaseModelEntity {
@@ -524,6 +622,12 @@ declare module "cs_script/point_script"
         GetPlayerController(): CSPlayerController | undefined;
         /** Gets the controller that this player pawn was originally spawned for. */
         GetOriginalPlayerController(): CSPlayerController;
+        /** @returns `true` if specified inputs are pressed at the end of the current tick. */
+        IsInputPressed(inputs: CSInputs): boolean;
+        /** @returns `true` if specified inputs went from released to pressed at some point during the current tick. */
+        WasInputJustPressed(inputs: CSInputs): boolean;
+        /** @returns `true` if specified inputs went from pressed to released at some point during the current tick. */
+        WasInputJustReleased(inputs: CSInputs): boolean;
         FindWeapon(name: string): CSWeaponBase | undefined;
         FindWeaponBySlot(slot: CSGearSlot): CSWeaponBase | undefined;
         GetActiveWeapon(): CSWeaponBase | undefined;
@@ -534,21 +638,23 @@ declare module "cs_script/point_script"
         GiveNamedItem(name: string, autoDeploy?: boolean): void;
         GetArmor(): number;
         SetArmor(value: number): void;
-        IsCrouching(): boolean;
-        IsCrouched(): boolean;
+        HasHelmet(): boolean;
+        SetHasHelmet(hasHelmet: boolean): void;
+        IsDucking(): boolean;
+        IsDucked(): boolean;
+        IsScoped(): boolean;
         IsNoclipping(): boolean;
+
+        /** @deprecated This method will be removed in a future update */
+        IsCrouching(): boolean;
+        /** @deprecated This method will be removed in a future update */
+        IsCrouched(): boolean;
     }
 
     export class PointTemplate extends Entity {
         ForceSpawn(origin?: Vector, angle?: QAngle): Entity[] | undefined;
     }
-}
 
-/**
- * @deprecated This unreleased feature will be removed in a future update as will the ability to load vts assets.
- */
-declare module "server/serverpointentity" { }
-/**
- * @deprecated This unreleased feature will be removed in a future update as will the ability to load vts assets.
- */
-declare module "server/cspointscript" { }
+    /** @deprecated This enum will be removed in a future update */
+    export enum CSDamageType { }
+}

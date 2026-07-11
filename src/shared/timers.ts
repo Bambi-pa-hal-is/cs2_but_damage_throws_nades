@@ -1,5 +1,4 @@
 import { Instance } from "cs_script/point_script";
-import { persistOnReload } from "./persist";
 
 type ScheduledCallback = {
     callback: () => void;
@@ -15,17 +14,20 @@ export const setTimeout = (callback: () => void, delaySeconds: number): void => 
 
 export const think = (): void => {
     const now = Instance.GetGameTime();
-    const remaining: ScheduledCallback[] = [];
-    for (const entry of scheduled) {
+    // Snapshot and clear first: a callback can itself call setTimeout (e.g. to reschedule itself
+    // every tick), and that must land in the next pass, not get picked up by this same loop.
+    const entries = scheduled;
+    scheduled = [];
+    for (const entry of entries) {
         if (now >= entry.fireAt) {
             entry.callback();
         } else {
-            remaining.push(entry);
+            scheduled.push(entry);
         }
     }
-    scheduled = remaining;
 };
 
-persistOnReload("timers", {
-    scheduled: { get: () => scheduled, set: (value) => { scheduled = value; } },
-});
+// scheduled is deliberately NOT persisted across a tools-mode script reload: any queued closure
+// (e.g. a self-rescheduling loop) would still reference the pre-reload module's stale bindings.
+// Modules that need to keep running across a reload restart themselves via their own
+// persistOnReload(..., onReloaded) hook, which gives them a fresh closure instead.

@@ -1,22 +1,40 @@
-import { BaseModelEntity, CSDamageTypes, CSGearSlot, CSPlayerController, CSPlayerPawn, Entity, Instance, PointTemplate, type QAngle, type Vector } from "cs_script/point_script";
+import { CSDamageTypes, CSPlayerPawn, Entity, Instance, PointTemplate, type QAngle, type Vector } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
-import { setEntityMessageByName } from "../shared/ui";
+import { getGameHasStarted } from "../shared/gamestate";
+import * as timers from "../shared/timers";
 
-var configuration = {
+export type NadeType = "he" | "flashbang" | "smoke" | "molotov" | "decoy";
+
+export interface ThrowNadesConfiguration {
+    throwGrenadeWhenShooting: boolean;
+    chanceToThrowGrenadeWhenShooting: number;
+    throwGrenadeWhenDealingDamage: boolean;
+    chanceToThrowGrenadeWhenDealingDamage: number;
+    isHeAllowed: boolean;
+    isFlashbangAllowed: boolean;
+    isSmokeAllowed: boolean;
+    isMolotovAllowed: boolean;
+    isDecoyAllowed: boolean;
+    onlyEquippedNades: boolean;
+    projectileSpeed: number;
+}
+
+let configuration: ThrowNadesConfiguration = {
     throwGrenadeWhenShooting: false,
     chanceToThrowGrenadeWhenShooting: 0.1,
     throwGrenadeWhenDealingDamage: true,
     chanceToThrowGrenadeWhenDealingDamage: 1.0,
-    isHeAllowed : true,
+    isHeAllowed: true,
     isFlashbangAllowed: true,
     isSmokeAllowed: true,
     isMolotovAllowed: true,
     isDecoyAllowed: false,
     onlyEquippedNades: true,
     projectileSpeed: 675.0,
-}
+};
 
-type NadeType = "he" | "flashbang" | "smoke" | "molotov" | "decoy";
+// The UI module reads/writes fields on this directly - it's the single shared source of truth.
+export const getConfiguration = (): ThrowNadesConfiguration => configuration;
 
 // The real thrown projectile, same templates as before. These fly with proper physics but,
 // since Valve's engine update, he/smoke/molotov no longer self-detonate when spawned via script.
@@ -55,104 +73,10 @@ const detonationTriggerByNadeType: Partial<Record<NadeType, DetonationTrigger>> 
     decoy: { kind: "stoppedMoving", speedThreshold: STOPPED_MOVING_SPEED_THRESHOLD },
 };
 
-const updateCheck = (show: boolean, entityName: string) => {
-    var check = Instance.FindEntityByName(entityName + "_check");
-    if(check instanceof BaseModelEntity)
-    {
-        var size = show ? 1.0 : 0.0;
-        check.SetModelScale(size);
-    }
-}
-
-const updatePercentageText = (entityName: string, percent: number) => {
-    var text = Math.floor(percent * 100) + "%";
-    setEntityMessageByName(entityName, text);
-}
-
 export const onActivate = () => {
     Instance.ServerCommand("mp_shoot_dropped_grenades 1");
+    timers.setTimeout(processPending, 0);
 };
-
-export const onRoundStart = () => {
-    updateCheck(configuration.throwGrenadeWhenShooting, "throw_a_nade_when_shooting_button");
-    updateCheck(configuration.throwGrenadeWhenDealingDamage, "throw_a_nade_when_dealing_damage_button");
-    updateCheck(configuration.isHeAllowed, "allow_he_button");
-    updateCheck(configuration.isFlashbangAllowed, "allow_flashbang_button");
-    updateCheck(configuration.isSmokeAllowed, "allow_smoke_button");
-    updateCheck(configuration.isMolotovAllowed, "allow_molotov_button");
-    updateCheck(configuration.isDecoyAllowed, "allow_decoy_button");
-    updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-};
-
-Instance.OnScriptInput("toggle_throw_nade_when_shooting", () => {
-    Instance.Msg("TOGGLE NADE WHEN SHOOTING");
-    configuration.throwGrenadeWhenShooting = !configuration.throwGrenadeWhenShooting;
-    updateCheck(configuration.throwGrenadeWhenShooting, "throw_a_nade_when_shooting_button");
-});
-
-Instance.OnScriptInput("toggle_throw_nade_when_dealing_damage", () => {
-    configuration.throwGrenadeWhenDealingDamage = !configuration.throwGrenadeWhenDealingDamage;
-    updateCheck(configuration.throwGrenadeWhenDealingDamage, "throw_a_nade_when_dealing_damage_button");
-});
-
-Instance.OnScriptInput("throw_a_nade_when_shooting_increment_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenShooting+=0.01;
-    configuration.chanceToThrowGrenadeWhenShooting = Math.max(configuration.chanceToThrowGrenadeWhenShooting,0.0);
-    configuration.chanceToThrowGrenadeWhenShooting = Math.min(configuration.chanceToThrowGrenadeWhenShooting,1.0);
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-});
-Instance.OnScriptInput("throw_a_nade_when_shooting_decrement_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenShooting-=0.01;
-    configuration.chanceToThrowGrenadeWhenShooting = Math.max(configuration.chanceToThrowGrenadeWhenShooting,0.0);
-    configuration.chanceToThrowGrenadeWhenShooting = Math.min(configuration.chanceToThrowGrenadeWhenShooting,1.0);
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-});
-
-Instance.OnScriptInput("throw_a_nade_when_dealing_damage_increment_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenDealingDamage+=0.01;
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.max(configuration.chanceToThrowGrenadeWhenDealingDamage,0.0);
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.min(configuration.chanceToThrowGrenadeWhenDealingDamage,1.0);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-});
-Instance.OnScriptInput("throw_a_nade_when_dealing_damage_decrement_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenDealingDamage-=0.01;
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.max(configuration.chanceToThrowGrenadeWhenDealingDamage,0.0);
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.min(configuration.chanceToThrowGrenadeWhenDealingDamage,1.0);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-});
-
-Instance.OnScriptInput("toggle_he", () => {
-    configuration.isHeAllowed = !configuration.isHeAllowed;
-    updateCheck(configuration.isHeAllowed, "allow_he_button");
-});
-
-Instance.OnScriptInput("toggle_flashbang", () => {
-    configuration.isFlashbangAllowed = !configuration.isFlashbangAllowed;
-    updateCheck(configuration.isFlashbangAllowed, "allow_flashbang_button");
-});
-
-Instance.OnScriptInput("toggle_smoke", () => {
-    configuration.isSmokeAllowed = !configuration.isSmokeAllowed;
-    updateCheck(configuration.isSmokeAllowed, "allow_smoke_button");
-});
-
-Instance.OnScriptInput("toggle_molotov", () => {
-    configuration.isMolotovAllowed = !configuration.isMolotovAllowed;
-    updateCheck(configuration.isMolotovAllowed, "allow_molotov_button");
-});
-
-Instance.OnScriptInput("toggle_decoy", () => {
-    configuration.isDecoyAllowed = !configuration.isDecoyAllowed;
-    updateCheck(configuration.isDecoyAllowed, "allow_decoy_button");
-});
-
-Instance.OnScriptInput("toggle_only_equipped_nades", () => {
-    configuration.onlyEquippedNades = !configuration.onlyEquippedNades;
-    updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
-});
-
 
 const deg2rad = (deg: number) => { return (deg * Math.PI) / 180.0; }
 
@@ -168,7 +92,6 @@ const forwardFromAngles = (ang: { pitch: number; yaw: number; }) => {
 const vecScale = (v: { x: number; y: number; z: number; }, s: number) => {
     return { x: v.x * s, y: v.y * s, z: v.z * s };
 };
-
 
 const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector, eyeAng: QAngle, velocity: Vector) : Entity | undefined => {
     const template = Instance.FindEntityByName(templateName);
@@ -315,7 +238,9 @@ const detonate = (pending: PendingDetonation) => {
     Instance.EntFireAtTarget({ target: pickupGrenade, input: "kill", delay: 0.5 });
 };
 
-export const think = () => {
+// Runs every tick via the shared timer module (self-reschedules with a 0s delay) instead of
+// index.ts pumping a dedicated think() export.
+const processPending = () => {
     const now = Instance.GetGameTime();
     const remaining: PendingDetonation[] = [];
     for (const pending of pendingDetonations) {
@@ -340,6 +265,8 @@ export const think = () => {
         updateProjectileGravity(tracked, now);
     }
     thrownProjectiles = thrownProjectiles.filter((p) => p.entity.IsValid());
+
+    timers.setTimeout(processPending, 0);
 };
 
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
@@ -375,8 +302,6 @@ const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | u
     return projectile;
 };
 
-
-
 const getRandomAllowedNadeType = () : NadeType | null => {
     const allowedNades : NadeType[] = [];
 
@@ -395,6 +320,8 @@ const getRandomAllowedNadeType = () : NadeType | null => {
 // --- main hook ---
 // TA INTE BORT/// DET FUNGERA FÖR FLASH
 Instance.OnGunFire((event) => {
+    if (!getGameHasStarted()) return;
+
     const shooter = event.weapon.GetOwner();
     if (!shooter) return;
 
@@ -408,7 +335,8 @@ Instance.OnGunFire((event) => {
     }
 });
 
-Instance.OnBeforePlayerDamage((event) => {
+Instance.OnModifyPlayerDamage((event) => {
+    if (!getGameHasStarted()) return;
 
     var attacker = event.attacker;
     if (!attacker) return;
@@ -427,10 +355,16 @@ Instance.OnBeforePlayerDamage((event) => {
     }
 });
 
-persistOnReload("throw_nades_on_damage_configuration", {
+persistOnReload("throwNadesOnDamage", {
     configuration: { get: () => configuration, set: (value) => { configuration = value; } },
     pendingDetonations: { get: () => pendingDetonations, set: (value) => { pendingDetonations = value; } },
     thrownProjectiles: { get: () => thrownProjectiles, set: (value) => { thrownProjectiles = value; } },
+}, () => {
+    // processPending's self-reschedule chain closes over this module instance's state. A tools-mode
+    // reload clears callbacks and re-evaluates the module, so the already-scheduled call becomes a
+    // stale closure that keeps ticking against orphaned state instead of the freshly restored one.
+    // onActivate only fires on a real map load, not on reload, so restart the loop here too.
+    timers.setTimeout(processPending, 0);
 });
 
 Instance.OnGrenadeThrow((event) => {

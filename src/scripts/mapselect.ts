@@ -20,7 +20,6 @@ var maps = [
 ];
 
 const loadWorkshopMap = () => {
-    Instance.DebugScreenText({ text: Instance.GetMapName(), x: 25, y: 25, duration: 60 });
     if (Instance.GetMapName() === "but_damage_throws_nades") {
         Instance.ServerCommand("map_workshop " + addonId + " de_dust2");
     }

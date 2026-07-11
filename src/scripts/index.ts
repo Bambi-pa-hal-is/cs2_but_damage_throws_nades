@@ -2,14 +2,16 @@ import { Instance } from "cs_script/point_script";
 import * as mapselect from "./mapselect";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
-import * as throwNadesOnDamage from "./throw_nades_on_damage_configuration";
+import * as throwNadesOnDamage from "./throwNadesOnDamage";
+import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as testMpShootDroppedGrenades from "./test_mp_shoot_dropped_grenades";
 import * as timers from "../shared/timers";
 import { getMpShootDroppedGrenadesEnabled, setGameHasStarted } from "../shared/gamestate";
 import { playSound } from "../shared/sound";
+import { printToChat } from "../shared/chat";
 
 Instance.OnActivate(() => {
-    Instance.Msg("Script activated!!!");
+    Instance.Msg("Script activated!!");
     mapselect.onActivate();
     startgame.onActivate();
     throwNadesOnDamage.onActivate();
@@ -23,7 +25,7 @@ Instance.OnRoundStart(() => {
     });
     mapselect.onRoundStart();
     startgame.onRoundStart();
-    throwNadesOnDamage.onRoundStart();
+    throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();
     testMpShootDroppedGrenades.onRoundStart();
 });
@@ -31,12 +33,15 @@ Instance.OnRoundStart(() => {
 Instance.OnScriptInput("StartGame", () => {
     if (!getMpShootDroppedGrenadesEnabled()) {
         playSound("startgame_fail_sound");
+        const message = "mp_shoot_dropped_grenades is not enabled - ask an admin to run: mp_shoot_dropped_grenades 1";
         Instance.DebugScreenText({
-            text: "mp_shoot_dropped_grenades is not enabled - ask an admin to run: mp_shoot_dropped_grenades 1",
+            text: message,
             x: 25,
             y: 25,
             duration: 15,
         });
+
+        printToChat(message);
         return;
     }
 
@@ -48,7 +53,6 @@ Instance.OnScriptInput("StartGame", () => {
 
 Instance.SetThink(() => {
     timers.think();
-    throwNadesOnDamage.think();
     Instance.SetNextThink(Instance.GetGameTime());
 });
 Instance.SetNextThink(Instance.GetGameTime());

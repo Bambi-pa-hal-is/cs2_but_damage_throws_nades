@@ -1,10 +1,25 @@
 import { Instance } from "cs_script/point_script";
 import { applyGameState, getGameHasStarted, setGameHasStarted } from "../shared/gamestate";
+import { printToChat } from "../shared/chat";
 
 export const onActivate = () => {
+    resetMap();
+};
+
+const RESET_CHAT_COMMAND = ".reset";
+
+const resetMap = () => {
     setGameHasStarted(false);
     warmupSettings();
 };
+
+Instance.OnPlayerChat((event) => {
+    printToChat(event.text.trim());
+    if (event.text.trim() != RESET_CHAT_COMMAND) return;
+
+    resetMap();
+    Instance.ServerCommand("mp_restartgame 1");
+});
 
 export const onStartGame = () => {
     resetWarmupSettings();
@@ -15,13 +30,13 @@ export const onRoundStart = () => {
     {
         warmupSettings();
         applyGameState();
+        printToChat(`Type ${RESET_CHAT_COMMAND} to reset the game and switch map or change the rules.`);
     }
 };
 
 const warmupSettings = () => {
     Instance.ServerCommand("sv_cheats 1");
     Instance.ServerCommand("mp_shoot_dropped_grenades 1");
-    Instance.ServerCommand("sv_disable_radar 1");
     Instance.ServerCommand("mp_autoteambalance 0");
     Instance.ServerCommand("mp_limitteams 0");
     Instance.ServerCommand("sv_infinite_ammo 1");
@@ -33,8 +48,8 @@ const warmupSettings = () => {
     Instance.ServerCommand("mp_autokick 0");
     Instance.ServerCommand("mp_solid_enemies 0");
     Instance.ServerCommand("mp_solid_teammates 0");
-    if(!Instance.IsWarmupPeriod()) {
-        Instance.ServerCommand("mp_warmup_start");
+    if(!Instance.IsWarmupPeriod()) { //we need to check if it already is warmup or an infinite loop will occur
+        Instance.ServerCommand("mp_warmup_start 1");
     }
 };
 
@@ -48,5 +63,6 @@ const resetWarmupSettings = () => {
     Instance.ServerCommand("mp_autokick 0");
     Instance.ServerCommand("mp_solid_enemies 1");
     Instance.ServerCommand("mp_solid_teammates 1");
+    Instance.ServerCommand("mp_restartgame 1");
     Instance.ServerCommand("sv_cheats 0");
 };
