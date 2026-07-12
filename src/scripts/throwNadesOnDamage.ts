@@ -195,11 +195,18 @@ const untrackProjectile = (entity: Entity) => {
 
 // There's no gravity getter/setter in the cs_script API, so gravity can't be read or set directly.
 // Each tracked nade's actual fall acceleration is measured every tick (logged below) by diffing
-// velocity.z between ticks - e.g. flashbang measured a consistent 320 u/s^2 versus the ~800 u/s^2
-// standard gravity every other type uses. For any type listed here, its measured acceleration gets
-// corrected up/down toward the given target (u/s^2) every tick. Types left out are untouched.
+// velocity.z between ticks. test_grenade_physics.ts measured real native HE throws falling at a
+// consistent -320 u/s^2 (12/12 samples, exact match every time) - the same number originally
+// flagged as flashbang's "anomaly". Our own ForceSpawn'd he/smoke/molotov/decoy replicas default to
+// generic-physics-prop gravity (~800 u/s^2) instead, so those are the ones that are actually wrong
+// and need pulling down to 320 to match real grenades. Flashbang's replica already naturally falls
+// at 320, so it's left out here (no correction needed). For any type listed here, its measured
+// acceleration gets corrected up/down toward the given target (u/s^2) every tick.
 const gravityAccelTargetByNadeType: Partial<Record<NadeType, number>> = {
-    flashbang: 800,
+    he: 320,
+    smoke: 320,
+    molotov: 320,
+    decoy: 320,
 };
 
 const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
@@ -211,7 +218,6 @@ const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
         const dt = now - tracked.lastSampleTime;
         if (dt > 0) {
             const measuredAccel = (tracked.lastVelocityZ - velocity.z) / dt;
-            Instance.Msg(`${tracked.nadeType} measured gravity: ${measuredAccel.toFixed(1)} u/s^2 (vz=${velocity.z.toFixed(1)})`);
 
             const targetAccel = gravityAccelTargetByNadeType[tracked.nadeType];
             if (targetAccel !== undefined) {
@@ -292,10 +298,18 @@ const processPending = () => {
     timers.setTimeout(processPending, 0);
 };
 
+// Real CS2 grenades get a slight upward toss baked into the throw regardless of exact aim (confirmed
+// by throwing dead-level with a static crosshair and still measuring upward velocity). Without this,
+// ours launch perfectly flat and fly noticeably straighter than the real thing. Starting guess - tune
+// by comparing a level-aim mod throw against a level-aim real throw in test_grenade_physics.ts.
+const THROW_UPWARD_ANGLE_DEGREES = 10;
+
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
     const eyePos = pawn.GetEyePosition();
     const eyeAng = pawn.GetEyeAngles();
-    const fwd = forwardFromAngles(eyeAng);
+    // Source pitch is +down/-up, so subtracting tilts the launch direction upward.
+    const throwAng = { pitch: eyeAng.pitch - THROW_UPWARD_ANGLE_DEGREES, yaw: eyeAng.yaw, roll: eyeAng.roll };
+    const fwd = forwardFromAngles(throwAng);
     let velocity = vecScale(fwd, configuration.projectileSpeed);
     const playerVelocity = pawn.GetAbsVelocity();
     velocity.x += playerVelocity.x;
