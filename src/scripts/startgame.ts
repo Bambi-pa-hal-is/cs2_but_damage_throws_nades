@@ -14,7 +14,6 @@ const resetMap = () => {
 };
 
 Instance.OnPlayerChat((event) => {
-    printToChat(event.text.trim());
     if (event.text.trim() != RESET_CHAT_COMMAND) return;
 
     resetMap();

@@ -4,16 +4,16 @@ import { setEntityMessageByName } from "../shared/ui";
 import { getConfiguration } from "./throwNadesOnDamage";
 
 const updateCheck = (show: boolean, entityName: string) => {
-    var check = Instance.FindEntityByName(entityName + "_check");
+    const check = Instance.FindEntityByName(entityName + "_check");
     if(check instanceof BaseModelEntity)
     {
-        var size = show ? 1.0 : 0.0;
+        const size = show ? 1.0 : 0.0;
         check.SetModelScale(size);
     }
 }
 
 const updatePercentageText = (entityName: string, percent: number) => {
-    var text = Math.floor(percent * 100) + "%";
+    const text = Math.floor(percent * 100) + "%";
     setEntityMessageByName(entityName, text);
 }
 

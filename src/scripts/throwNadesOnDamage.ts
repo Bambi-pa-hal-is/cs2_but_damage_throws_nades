@@ -1,6 +1,8 @@
-import { CSDamageTypes, CSPlayerPawn, Entity, Instance, PointTemplate, type QAngle, type Vector } from "cs_script/point_script";
+import { CSDamageTypes, CSPlayerPawn, Entity, Instance, type QAngle, type Vector } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { getGameHasStarted } from "../shared/gamestate";
+import { forceSpawnTemplate } from "../shared/spawn";
+import { vectorLength } from "../shared/vector";
 import * as timers from "../shared/timers";
 
 export type NadeType = "he" | "flashbang" | "smoke" | "molotov" | "decoy";
@@ -21,7 +23,7 @@ export interface ThrowNadesConfiguration {
 
 let configuration: ThrowNadesConfiguration = {
     throwGrenadeWhenShooting: false,
-    chanceToThrowGrenadeWhenShooting: 0.1,
+    chanceToThrowGrenadeWhenShooting: 1.0,
     throwGrenadeWhenDealingDamage: true,
     chanceToThrowGrenadeWhenDealingDamage: 1.0,
     isHeAllowed: true,
@@ -121,19 +123,8 @@ const vecScale = (v: { x: number; y: number; z: number; }, s: number) => {
 };
 
 const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector, eyeAng: QAngle, velocity: Vector) : Entity | undefined => {
-    const template = Instance.FindEntityByName(templateName);
-    if (!template) {
-        Instance.Msg(`${templateName} not found`);
-        return;
-    }
-    if(!(template instanceof PointTemplate))
-    {
-        Instance.Msg(`${templateName} is not of type point template`);
-        return;
-    }
-
-    const spawned = template.ForceSpawn(eyePos,eyeAng);
-    if (!spawned || spawned.length === 0) return;
+    const spawned = forceSpawnTemplate(templateName, eyePos, eyeAng);
+    if (!spawned) return;
     const entity = spawned[0];
 
     entity.SetOwner(pawn); //Does this even do anything?!?!
@@ -156,7 +147,7 @@ const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector
 
 type PendingDetonation = { nadeType: NadeType; projectile: Entity; pawn: CSPlayerPawn; detonateAt?: number; actionTemplateName: string };
 
-var pendingDetonations: PendingDetonation[] = [];
+let pendingDetonations: PendingDetonation[] = [];
 
 const scheduleDetonation = (nadeType: NadeType, projectile: Entity, pawn: CSPlayerPawn, trigger: DetonationTrigger, actionTemplateName: string) => {
     const detonateAt = trigger.kind === "delay" ? Instance.GetGameTime() + trigger.seconds : undefined;
@@ -171,8 +162,7 @@ const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => 
         return pending.detonateAt !== undefined && now >= pending.detonateAt;
     }
 
-    const velocity = pending.projectile.GetAbsVelocity();
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+    const speed = vectorLength(pending.projectile.GetAbsVelocity());
     return speed < trigger.speedThreshold;
 };
 
@@ -180,7 +170,7 @@ const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => 
 // identify which nade type they're dealing with, since those events only expose the entity.
 type ThrownProjectile = { entity: Entity; nadeType: NadeType; pawn: CSPlayerPawn; actionTemplateName?: string; lastVelocityZ?: number; lastSampleTime?: number };
 
-var thrownProjectiles: ThrownProjectile[] = [];
+let thrownProjectiles: ThrownProjectile[] = [];
 
 const trackProjectile = (entity: Entity, nadeType: NadeType, pawn: CSPlayerPawn, actionTemplateName?: string) => {
     thrownProjectiles.push({ entity, nadeType, pawn, actionTemplateName });
@@ -236,21 +226,15 @@ const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
 // Spawns the correct pickup grenade for this nade type at the projectile's current position,
 // damages it to force detonation, then instantly kills it - it only exists to trigger the explosion.
 const detonate = (pending: PendingDetonation) => {
-    Instance.Msg(`Detonating ${pending.nadeType} at game time ${Instance.GetGameTime()}`);
-
     // Idempotent: whether this was triggered by the timer or by an early wall bounce, make sure
     // there's no leftover scheduled detonation left to fire again for the same projectile.
     pendingDetonations = pendingDetonations.filter((p) => p.projectile !== pending.projectile);
     untrackProjectile(pending.projectile);
 
     const position = pending.projectile.IsValid() ? pending.projectile.GetAbsOrigin() : pending.pawn.GetEyePosition();
-    Instance.Msg(`${pending.nadeType} detonation position: ${JSON.stringify(position)}`);
 
     if (pending.projectile.IsValid()) {
         Instance.EntFireAtTarget({ target: pending.projectile, input: "kill" });
-        Instance.Msg(`Killed ${pending.nadeType} projectile`);
-    } else {
-        Instance.Msg(`${pending.nadeType} projectile was already invalid at detonation time`);
     }
 
     const actionTemplateName = pending.actionTemplateName;
@@ -262,7 +246,6 @@ const detonate = (pending: PendingDetonation) => {
         return;
     }
 
-    Instance.Msg(`Damaging pickup grenade ${actionTemplateName} to force ${pending.nadeType} detonation`);
     pickupGrenade.TakeDamage({ damage: 100, damageTypes: CSDamageTypes.BULLET, attacker: pending.pawn });
     Instance.EntFireAtTarget({ target: pickupGrenade, input: "kill", delay: 0.5 });
 };
@@ -276,13 +259,11 @@ const processPending = () => {
         if (!pending.projectile.IsValid()) {
             // Already gone by some other means (e.g. a smoke consumed by a burning molotov
             // detonates itself) - our workaround has nothing left to do, just drop it.
-            Instance.Msg(`${pending.nadeType} projectile no longer valid before our detonation trigger fired, ignoring`);
             untrackProjectile(pending.projectile);
             continue;
         }
 
         if (isReadyToDetonate(pending, now)) {
-            Instance.Msg(`Detonation trigger fired for ${pending.nadeType} (now=${now})`);
             detonate(pending);
         } else {
             remaining.push(pending);
@@ -302,7 +283,7 @@ const processPending = () => {
 // by throwing dead-level with a static crosshair and still measuring upward velocity). Without this,
 // ours launch perfectly flat and fly noticeably straighter than the real thing. Starting guess - tune
 // by comparing a level-aim mod throw against a level-aim real throw in test_grenade_physics.ts.
-const THROW_UPWARD_ANGLE_DEGREES = 10;
+const THROW_UPWARD_ANGLE_DEGREES = 15;
 
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
     const eyePos = pawn.GetEyePosition();
@@ -315,8 +296,6 @@ const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | u
     velocity.x += playerVelocity.x;
     velocity.y += playerVelocity.y;
     velocity.z += playerVelocity.z;
-
-    Instance.Msg(`Throwing ${nadeType} for ${pawn.GetEntityName()} at ${JSON.stringify(eyePos)} with velocity ${JSON.stringify(velocity)}`);
 
     const projectile = spawnAndLaunch(projectileTemplateNameByType[nadeType], pawn, eyePos, eyeAng, velocity);
     if (!projectile) return;
@@ -361,18 +340,17 @@ const getRandomAllowedNadeType = (pawn: CSPlayerPawn) : NadeType | null => {
 };
 
 // --- main hook ---
-// TA INTE BORT/// DET FUNGERA FÖR FLASH
 Instance.OnGunFire((event) => {
     if (!getGameHasStarted()) return;
 
     const shooter = event.weapon.GetOwner();
     if (!shooter) return;
 
-    var randomValue = Math.random();
+    const randomValue = Math.random();
     if(configuration.throwGrenadeWhenShooting && randomValue < configuration.chanceToThrowGrenadeWhenShooting)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType(shooter);
+        const nadeType = getRandomAllowedNadeType(shooter);
         if(!nadeType) return;
         throwNadeForPlayer(shooter, nadeType);
     }
@@ -381,18 +359,18 @@ Instance.OnGunFire((event) => {
 Instance.OnModifyPlayerDamage((event) => {
     if (!getGameHasStarted()) return;
 
-    var attacker = event.attacker;
+    const attacker = event.attacker;
     if (!attacker) return;
     if (!(attacker instanceof CSPlayerPawn))
     {
         Instance.Msg("attacker not playercontroller");
         return;
     }
-    var randomValue = Math.random();
+    const randomValue = Math.random();
     if(configuration.throwGrenadeWhenDealingDamage && randomValue < configuration.chanceToThrowGrenadeWhenDealingDamage)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType(attacker);
+        const nadeType = getRandomAllowedNadeType(attacker);
         if(!nadeType) return;
         throwNadeForPlayer(attacker, nadeType);
     }
@@ -410,12 +388,6 @@ persistOnReload("throwNadesOnDamage", {
     timers.setTimeout(processPending, 0);
 });
 
-Instance.OnGrenadeThrow((event) => {
-    var velocity = event.projectile.GetAbsVelocity();
-    var speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
-    Instance.Msg("Grenade thrown with speed: " + speed);
-});
-
 // Bounce speed loss applied to every grenade type, every bounce. Speed is reduced by a percentage
 // first, then by a flat amount, and never goes below 0. Both knobs are here so they're easy to tune.
 const BOUNCE_VELOCITY_PERCENT_LOSS = 0.15; // fraction of speed lost per bounce, e.g. 0.3 = lose 30%
@@ -424,7 +396,7 @@ const BOUNCE_VELOCITY_FLAT_LOSS = 15; // flat units/sec subtracted per bounce, a
 //We need to apply a velocity loss because the friction or something is bugged for projectiles so they slide around forever. This is a workaround to make them slow down and eventually stop moving.
 const applyBounceVelocityLoss = (entity: Entity) => {
     const velocity = entity.GetAbsVelocity();
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+    const speed = vectorLength(velocity);
     if (speed <= 0) return;
 
     const newSpeed = Math.max(0, speed * (1 - BOUNCE_VELOCITY_PERCENT_LOSS) - BOUNCE_VELOCITY_FLAT_LOSS);
@@ -445,7 +417,6 @@ const GROUND_TRACE_UP_OFFSET = 4;
 const GROUND_TRACE_DISTANCE = 40;
 
 Instance.OnGrenadeBounce((event) => {
-    Instance.Msg(`Grenade bounce #${event.bounces} for ${event.projectile.GetClassName()}`);
     const tracked = thrownProjectiles.find((p) => p.entity === event.projectile);
     if (!tracked) return;
 
@@ -458,7 +429,6 @@ Instance.OnGrenadeBounce((event) => {
     const traceEnd = { x: position.x, y: position.y, z: position.z - GROUND_TRACE_DISTANCE };
 
     const trace = Instance.TraceLine({ start: traceStart, end: traceEnd, ignoreEntity: event.projectile });
-    Instance.Msg(`Molotov bounce #${event.bounces}: start=${JSON.stringify(traceStart)}, end=${JSON.stringify(traceEnd)}, didHit=${trace.didHit}, fraction=${trace.fraction}, hitPos=${JSON.stringify(trace.end)}`);
     if (!trace.didHit) return;
 
     detonate({

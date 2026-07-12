@@ -4,14 +4,14 @@ import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
 import * as throwNadesOnDamage from "./throwNadesOnDamage";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
-import * as testMpShootDroppedGrenades from "./test_mp_shoot_dropped_grenades";
+import * as testMpShootDroppedGrenades from "./testMpShootDroppedGrenades";
 import * as timers from "../shared/timers";
 import { getMpShootDroppedGrenadesEnabled, setGameHasStarted } from "../shared/gamestate";
 import { playSound } from "../shared/sound";
 import { printToChat } from "../shared/chat";
 
 Instance.OnActivate(() => {
-    Instance.Msg("Script activated!!");
+    Instance.Msg("Script activated!");
     mapselect.onActivate();
     startgame.onActivate();
     throwNadesOnDamage.onActivate();

@@ -1,14 +1,13 @@
 import { Instance, type CSPlayerController } from "cs_script/point_script";
 import { persistOnReload } from "./persist";
 import { findConnectedPlayerControllers } from "./players";
+import { CT_TEAM, T_TEAM } from "./teams";
 
 let gameHasStarted = false;
 
 const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
 const CT_SPAWN_CLASS = "info_player_counterterrorist";
 const T_SPAWN_CLASS = "info_player_terrorist";
-const CT_TEAM = 3;
-const T_TEAM = 2;
 
 // info_player_terrorist/info_player_counterterrorist have no Enable/Disable input, only
 // toggleenabled, and every spawn starts enabled by default. Toggling isn't idempotent, so we track

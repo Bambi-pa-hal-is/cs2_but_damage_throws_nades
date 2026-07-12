@@ -3,7 +3,7 @@ import { persistOnReload } from "../shared/persist";
 import { addonId } from "../shared/environment";
 import { getGameHasStarted } from "../shared/gamestate";
 
-var maps = [
+const maps = [
     "de_overpass",
     "de_dust2",
     "de_nuke",
@@ -26,9 +26,9 @@ const loadWorkshopMap = () => {
 };
 
 const highlightMapButton = (selectedMap: string) => {
-    for (var i = 0; i < maps.length; i++) {
-        var map = maps[i];
-        var mapButton = Instance.FindEntityByName(map);
+    for (let i = 0; i < maps.length; i++) {
+        const map = maps[i];
+        const mapButton = Instance.FindEntityByName(map);
         if (mapButton instanceof BaseModelEntity) {
             if (map != selectedMap) {
                 mapButton.Unglow();
@@ -51,7 +51,7 @@ export const onActivate = () => {
 };
 
 Instance.OnScriptInput("SelectMap", (caller) => {
-    var selectedMap = caller?.caller?.GetEntityName() ?? "";
+    const selectedMap = caller?.caller?.GetEntityName() ?? "";
     Instance.ServerCommand("map_workshop " + addonId + " " + selectedMap);
     highlightMapButton(selectedMap);
 });
@@ -59,7 +59,7 @@ Instance.OnScriptInput("SelectMap", (caller) => {
 export const onRoundStart = () => {
     if (getGameHasStarted()) {
         //Disable glow when game has started so players cant see the glow when playing.
-        var mapButton = Instance.FindEntityByName(Instance.GetMapName());
+        const mapButton = Instance.FindEntityByName(Instance.GetMapName());
         if (mapButton instanceof BaseModelEntity) {
             mapButton.Unglow();
         }
