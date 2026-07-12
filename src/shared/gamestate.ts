@@ -7,12 +7,12 @@ let gameHasStarted = false;
 
 const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
 const CT_SPAWN_CLASS = "info_player_counterterrorist";
-const T_SPAWN_CLASS = "info_player_terrorist";
 
-// info_player_terrorist/info_player_counterterrorist have no Enable/Disable input, only
-// toggleenabled, and every spawn starts enabled by default. Toggling isn't idempotent, so we track
-// each group's current enabled state ourselves and only fire the toggle when it actually needs to flip.
-let normalSpawnsEnabled = true;
+// info_player_counterterrorist has no Enable/Disable input, only toggleenabled, and every spawn
+// starts enabled by default. Toggling isn't idempotent, so we track the current enabled state
+// ourselves and only fire the toggle when it actually needs to flip. Terrorist spawns are
+// deliberately never toggled - see forceRealPlayersOffT()/OnPlayerReset below for why.
+let ctSpawnsEnabled = true;
 let configurationSpawnsEnabled = true;
 
 let players: CSPlayerController[] = [];
@@ -37,16 +37,14 @@ export const refreshPlayers = (): void => {
 
 // configuration_spawn entities are themselves info_player_counterterrorist, so they're excluded here
 // and toggled separately below.
-const setNormalSpawnsEnabled = (enabled: boolean) => {
-    if (enabled === normalSpawnsEnabled) return;
-    normalSpawnsEnabled = enabled;
+const setCtSpawnsEnabled = (enabled: boolean) => {
+    if (enabled === ctSpawnsEnabled) return;
+    ctSpawnsEnabled = enabled;
 
-    for (const className of [CT_SPAWN_CLASS, T_SPAWN_CLASS]) {
-        const spawns = Instance.FindEntitiesByClass(className);
-        for (const spawn of spawns) {
-            if (spawn.GetEntityName() === CONFIGURATION_SPAWN_NAME) continue;
-            Instance.EntFireAtTarget({ target: spawn, input: "toggleenabled" });
-        }
+    const spawns = Instance.FindEntitiesByClass(CT_SPAWN_CLASS);
+    for (const spawn of spawns) {
+        if (spawn.GetEntityName() === CONFIGURATION_SPAWN_NAME) continue;
+        Instance.EntFireAtTarget({ target: spawn, input: "toggleenabled" });
     }
 };
 
@@ -57,33 +55,38 @@ const setConfigurationSpawnsEnabled = (enabled: boolean) => {
     Instance.EntFireAtName({ name: CONFIGURATION_SPAWN_NAME, input: "toggleenabled" });
 };
 
-const forceTPlayersToCt = () => {
+// Terrorist spawns are always left enabled (bots can freely spawn/sit on T before the game starts),
+// but a real player should never end up playing on T before then - bounce them to CT instead.
+const forceRealPlayersOffT = () => {
     for (const controller of players) {
-        if (controller.IsValid() && controller.GetTeamNumber() === T_TEAM) {
+        if (controller.IsValid() && !controller.IsBot() && controller.GetTeamNumber() === T_TEAM) {
             controller.JoinTeam(CT_TEAM);
         }
     }
 };
 
-// forceTPlayersToCt() above only runs when applyGameState() is called (e.g. round start) - a player
-// who spawns as T in between (say, via a manual jointeam) wouldn't be caught until the next one. This
-// catches it immediately on the actual spawn/respawn instead.
+// forceRealPlayersOffT() above only runs when applyGameState() is called (e.g. round start) - a
+// player who spawns as T in between (say, via a manual jointeam) wouldn't be caught until the next
+// one. This catches it immediately on the actual spawn/respawn instead.
 Instance.OnPlayerReset((event) => {
     if (gameHasStarted) return;
     if (event.player.GetTeamNumber() !== T_TEAM) return;
 
-    event.player.GetPlayerController()?.JoinTeam(CT_TEAM);
+    const controller = event.player.GetPlayerController();
+    if (!controller || controller.IsBot()) return;
+
+    controller.JoinTeam(CT_TEAM);
 });
 
 // Applies the spawn/team setup for the current gameHasStarted value. Safe to call repeatedly
 // (e.g. every round start) to catch late joiners or manual team switches.
 export const applyGameState = (): void => {
-    setNormalSpawnsEnabled(gameHasStarted);
+    setCtSpawnsEnabled(gameHasStarted);
     setConfigurationSpawnsEnabled(!gameHasStarted);
 
     if (!gameHasStarted) {
         refreshPlayers();
-        forceTPlayersToCt();
+        forceRealPlayersOffT();
     }
 };
 
@@ -96,7 +99,7 @@ export const setGameHasStarted = (value: boolean): void => {
 
 persistOnReload("gamestate", {
     gameHasStarted: { get: () => gameHasStarted, set: (value) => { gameHasStarted = value; } },
-    normalSpawnsEnabled: { get: () => normalSpawnsEnabled, set: (value) => { normalSpawnsEnabled = value; } },
+    ctSpawnsEnabled: { get: () => ctSpawnsEnabled, set: (value) => { ctSpawnsEnabled = value; } },
     configurationSpawnsEnabled: { get: () => configurationSpawnsEnabled, set: (value) => { configurationSpawnsEnabled = value; } },
     players: { get: () => players, set: (value) => { players = value; } },
     mpShootDroppedGrenadesEnabled: { get: () => mpShootDroppedGrenadesEnabled, set: (value) => { mpShootDroppedGrenadesEnabled = value; } },

@@ -84,6 +84,10 @@ const updateUi = (): void => {
 
     let tOffset = 0;
     let ctOffset = 0;
+    // Only schedule one retry per updateUi() call, no matter how many players are missing a button -
+    // scheduling one per missing player made this schedule N new calls to itself every pass, each of
+    // which would do the same, growing exponentially instead of just retrying once per tick.
+    let needsRetry = false;
 
     for (let i = 0; i < configuration.players.length; i++) {
         const player = configuration.players[i];
@@ -92,7 +96,7 @@ const updateUi = (): void => {
         if (!playerButton || !playerButtonText) {
             Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
             createPlayerButton({ position: { x: -0, y: -0, z: -0 }, id: player.id.toString() }); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
-            timers.setTimeout(updateUi, 0);
+            needsRetry = true;
             continue;
         }
 
@@ -122,6 +126,10 @@ const updateUi = (): void => {
         });
 
         setEntityMessage(playerButtonText, `${namePrefix}${player.name}`);
+    }
+
+    if (needsRetry) {
+        timers.setTimeout(updateUi, 0);
     }
 };
 

@@ -47,8 +47,12 @@ Instance.OnScriptInput("StartGame", () => {
 
     playSound("startgame_success_sound");
     setGameHasStarted(true);
-    teamconfiguration.onStartGame();
-    timers.setTimeout(() => startgame.onStartGame(), 1);
+    // startgame.onStartGame() (at +1s) issues mp_restartgame 1, which doesn't actually restart the
+    // round until +1s after that (+2s total) - bots get re-evaluated/respawned then, and CS2's bot
+    // team-balancing can silently undo a JoinTeam() call made before that point. Assign teams after
+    // the restart has actually happened, not before it's even been requested.
+    timers.setTimeout(() => startgame.onStartGame(), 0.1);
+    timers.setTimeout(() => teamconfiguration.onStartGame(), 0.2);
 });
 
 Instance.SetThink(() => {
