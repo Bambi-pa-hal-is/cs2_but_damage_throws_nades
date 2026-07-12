@@ -283,7 +283,7 @@ const processPending = () => {
 // by throwing dead-level with a static crosshair and still measuring upward velocity). Without this,
 // ours launch perfectly flat and fly noticeably straighter than the real thing. Starting guess - tune
 // by comparing a level-aim mod throw against a level-aim real throw in test_grenade_physics.ts.
-const THROW_UPWARD_ANGLE_DEGREES = 15;
+const THROW_UPWARD_ANGLE_DEGREES = 12;
 
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
     const eyePos = pawn.GetEyePosition();
