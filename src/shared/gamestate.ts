@@ -5,14 +5,12 @@ import { CT_TEAM, T_TEAM } from "./teams";
 
 let gameHasStarted = false;
 
-const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
-const CT_SPAWN_CLASS = "info_player_counterterrorist";
+export const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
 
 // info_player_counterterrorist has no Enable/Disable input, only toggleenabled, and every spawn
 // starts enabled by default. Toggling isn't idempotent, so we track the current enabled state
 // ourselves and only fire the toggle when it actually needs to flip. Terrorist spawns are
 // deliberately never toggled - see forceRealPlayersOffT()/OnPlayerReset below for why.
-let ctSpawnsEnabled = true;
 let configurationSpawnsEnabled = true;
 
 let players: CSPlayerController[] = [];
@@ -33,19 +31,6 @@ export const setMpShootDroppedGrenadesEnabled = (value: boolean): void => {
 // list - this also catches players who connected before this script had loaded.
 export const refreshPlayers = (): void => {
     players = findConnectedPlayerControllers();
-};
-
-// configuration_spawn entities are themselves info_player_counterterrorist, so they're excluded here
-// and toggled separately below.
-const setCtSpawnsEnabled = (enabled: boolean) => {
-    if (enabled === ctSpawnsEnabled) return;
-    ctSpawnsEnabled = enabled;
-
-    const spawns = Instance.FindEntitiesByClass(CT_SPAWN_CLASS);
-    for (const spawn of spawns) {
-        if (spawn.GetEntityName() === CONFIGURATION_SPAWN_NAME) continue;
-        Instance.EntFireAtTarget({ target: spawn, input: "toggleenabled" });
-    }
 };
 
 const setConfigurationSpawnsEnabled = (enabled: boolean) => {
@@ -81,7 +66,6 @@ Instance.OnPlayerReset((event) => {
 // Applies the spawn/team setup for the current gameHasStarted value. Safe to call repeatedly
 // (e.g. every round start) to catch late joiners or manual team switches.
 export const applyGameState = (): void => {
-    setCtSpawnsEnabled(gameHasStarted);
     setConfigurationSpawnsEnabled(!gameHasStarted);
 
     if (!gameHasStarted) {
@@ -99,7 +83,6 @@ export const setGameHasStarted = (value: boolean): void => {
 
 persistOnReload("gamestate", {
     gameHasStarted: { get: () => gameHasStarted, set: (value) => { gameHasStarted = value; } },
-    ctSpawnsEnabled: { get: () => ctSpawnsEnabled, set: (value) => { ctSpawnsEnabled = value; } },
     configurationSpawnsEnabled: { get: () => configurationSpawnsEnabled, set: (value) => { configurationSpawnsEnabled = value; } },
     players: { get: () => players, set: (value) => { players = value; } },
     mpShootDroppedGrenadesEnabled: { get: () => mpShootDroppedGrenadesEnabled, set: (value) => { mpShootDroppedGrenadesEnabled = value; } },

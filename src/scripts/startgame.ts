@@ -1,24 +1,14 @@
 import { Instance } from "cs_script/point_script";
 import { applyGameState, getGameHasStarted, setGameHasStarted } from "../shared/gamestate";
-import { printToChat } from "../shared/chat";
 
 export const onActivate = () => {
     resetMap();
 };
 
-const RESET_CHAT_COMMAND = ".reset";
-
 const resetMap = () => {
     setGameHasStarted(false);
     warmupSettings();
 };
-
-Instance.OnPlayerChat((event) => {
-    if (event.text.trim() != RESET_CHAT_COMMAND) return;
-
-    resetMap();
-    Instance.ServerCommand("mp_restartgame 1");
-});
 
 export const onStartGame = () => {
     resetWarmupSettings();
@@ -29,7 +19,6 @@ export const onRoundStart = () => {
     {
         warmupSettings();
         applyGameState();
-        printToChat(`Type ${RESET_CHAT_COMMAND} to reset the game and switch map or change the rules.`);
     }
 };
 
