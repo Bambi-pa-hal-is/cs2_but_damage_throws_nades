@@ -65,6 +65,16 @@ const forceTPlayersToCt = () => {
     }
 };
 
+// forceTPlayersToCt() above only runs when applyGameState() is called (e.g. round start) - a player
+// who spawns as T in between (say, via a manual jointeam) wouldn't be caught until the next one. This
+// catches it immediately on the actual spawn/respawn instead.
+Instance.OnPlayerReset((event) => {
+    if (gameHasStarted) return;
+    if (event.player.GetTeamNumber() !== T_TEAM) return;
+
+    event.player.GetPlayerController()?.JoinTeam(CT_TEAM);
+});
+
 // Applies the spawn/team setup for the current gameHasStarted value. Safe to call repeatedly
 // (e.g. every round start) to catch late joiners or manual team switches.
 export const applyGameState = (): void => {
@@ -90,4 +100,8 @@ persistOnReload("gamestate", {
     configurationSpawnsEnabled: { get: () => configurationSpawnsEnabled, set: (value) => { configurationSpawnsEnabled = value; } },
     players: { get: () => players, set: (value) => { players = value; } },
     mpShootDroppedGrenadesEnabled: { get: () => mpShootDroppedGrenadesEnabled, set: (value) => { mpShootDroppedGrenadesEnabled = value; } },
+}, () => {
+    // Values are already restored by the time this runs, so this is a no-op unless something is
+    // actually out of sync - safe to call, not a resend/inversion of the toggle.
+    applyGameState();
 });

@@ -55,6 +55,7 @@ const warmupSettings = () => {
 const resetWarmupSettings = () => {
     Instance.ServerCommand("sv_cheats 1");
     Instance.ServerCommand("sv_infinite_ammo 0");
+    Instance.ServerCommand("bot_stop 0");
     Instance.ServerCommand("weapon_accuracy_nospread 0");
     Instance.ServerCommand("mp_warmup_end");
     Instance.ServerCommand("sv_autobunnyhopping 0");
