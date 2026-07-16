@@ -65,18 +65,37 @@ const MAP_SPAWN_GROUP_CLASS = "info_player_counterterrorist";
 const MAP_SPAWN_POLL_INTERVAL = 0.1;
 const MAP_SPAWN_SETTLE_DELAY = 3;
 
-// spawn_group_load is asynchronous - the map's own info_player_counterterrorist entities (unlike
-// configuration_spawn, which always exists) only show up once it has actually finished loading.
-// Poll for one, then wait a bit longer on top to let the rest of the spawn group settle in.
+// spawn_group_load is asynchronous - the map's own info_player_counterterrorist entities only show up once it has actually finished loading.
+// Poll the total entity count instead of just the spawn class: as long as new entities keep streaming
+// in, the spawn group is still settling. Once the count stops growing for MAP_SPAWN_SETTLE_DELAY
+// seconds (and a real info_player_counterterrorist exists), the map is considered loaded.
 const waitForMapToLoad = (onLoaded: () => void) => {
+    let lastEntityCount = -1;
+    let settleTimeRemaining = MAP_SPAWN_SETTLE_DELAY;
+
     const poll = () => {
+        const entityCount = Instance.FindEntitiesByClass("*").length;
         const spawns = Instance.FindEntitiesByClass(MAP_SPAWN_GROUP_CLASS);
-        const mapLoaded = spawns.some((spawn) => spawn.GetEntityName() !== CONFIGURATION_SPAWN_NAME);
-        if (mapLoaded) {
-            timers.setTimeout(onLoaded, MAP_SPAWN_SETTLE_DELAY);
-        } else {
-            timers.setTimeout(poll, MAP_SPAWN_POLL_INTERVAL);
+        const spawnFound = spawns.some((spawn) => spawn.GetEntityName() !== CONFIGURATION_SPAWN_NAME);
+
+        if (entityCount > lastEntityCount) {
+            settleTimeRemaining = MAP_SPAWN_SETTLE_DELAY;
         }
+        lastEntityCount = entityCount;
+
+        // DEBUG: remove this DebugScreenText call once loading behaves as expected.
+        Instance.DebugScreenText({
+            text: `waitForMapToLoad: entities=${entityCount} spawnFound=${spawnFound} settle=${settleTimeRemaining.toFixed(1)}s`,
+            x: 25, y: 25, duration: MAP_SPAWN_POLL_INTERVAL * 2, color: { r: 255, g: 255, b: 0 }
+        });
+
+        if (spawnFound && settleTimeRemaining <= 0) {
+            onLoaded();
+            return;
+        }
+
+        settleTimeRemaining -= MAP_SPAWN_POLL_INTERVAL;
+        timers.setTimeout(poll, MAP_SPAWN_POLL_INTERVAL);
     };
     poll();
 };

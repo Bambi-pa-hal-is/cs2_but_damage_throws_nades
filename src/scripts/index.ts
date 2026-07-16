@@ -11,7 +11,7 @@ import { playSound } from "../shared/sound";
 import { printToChat } from "../shared/chat";
 
 Instance.OnActivate(() => {
-    Instance.Msg("Script activated!!!");
+    Instance.Msg("Script activated!!");
     mapselect.onActivate();
     startgame.onActivate();
     throwNadesOnDamage.onActivate();

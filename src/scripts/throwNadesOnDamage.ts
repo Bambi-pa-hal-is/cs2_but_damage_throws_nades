@@ -27,11 +27,11 @@ let configuration: ThrowNadesConfiguration = {
     throwGrenadeWhenDealingDamage: true,
     chanceToThrowGrenadeWhenDealingDamage: 1.0,
     isHeAllowed: true,
-    isFlashbangAllowed: true,
+    isFlashbangAllowed: false,
     isSmokeAllowed: true,
     isMolotovAllowed: true,
     isDecoyAllowed: false,
-    onlyEquippedNades: true,
+    onlyEquippedNades: false,
     projectileSpeed: 675.0,
 };
 
