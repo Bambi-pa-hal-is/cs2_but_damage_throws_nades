@@ -19,6 +19,7 @@ export interface ThrowNadesConfiguration {
     isDecoyAllowed: boolean;
     onlyEquippedNades: boolean;
     projectileSpeed: number;
+    playerHealth: number;
 }
 
 let configuration: ThrowNadesConfiguration = {
@@ -33,6 +34,7 @@ let configuration: ThrowNadesConfiguration = {
     isDecoyAllowed: false,
     onlyEquippedNades: false,
     projectileSpeed: 675.0,
+    playerHealth: 300,
 };
 
 // The UI module reads/writes fields on this directly - it's the single shared source of truth.

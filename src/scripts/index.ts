@@ -6,9 +6,17 @@ import * as throwNadesOnDamage from "./throwNadesOnDamage";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as testMpShootDroppedGrenades from "./testMpShootDroppedGrenades";
 import * as timers from "../shared/timers";
-import { getGameHasStarted, getMpShootDroppedGrenadesEnabled, setGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, getMpShootDroppedGrenadesEnabled, onPlayerReset, setGameHasStarted } from "../shared/gamestate";
+import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
 import { playSound } from "../shared/sound";
 import { printToChat } from "../shared/chat";
+
+// Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
+// needs to react to a player reset gets called from here instead of registering its own.
+Instance.OnPlayerReset((event) => {
+    onPlayerReset(event);
+    applyHealthToPlayer(event.player);
+});
 
 Instance.OnActivate(() => {
     Instance.Msg("Script activated!!");

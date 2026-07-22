@@ -47,7 +47,7 @@ const runCheck = () => {
 
 Instance.OnScriptInput("test_shoot_grenades_enabled", () => {
     setMpShootDroppedGrenadesEnabled(true);
-    setEntityMessageByName("Start_button_text", "Press E to start");
+    setEntityMessageByName("Start_button_text", "Shoot here to start!");
 });
 
 persistOnReload("test_mp_shoot_dropped_grenades", {}, () => {

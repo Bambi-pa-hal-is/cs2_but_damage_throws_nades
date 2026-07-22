@@ -1,7 +1,29 @@
-import { BaseModelEntity, Instance } from "cs_script/point_script";
+import { BaseModelEntity, Instance, type CSPlayerPawn } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { setEntityMessageByName } from "../shared/ui";
 import { getConfiguration } from "./throwNadesOnDamage";
+
+const HEALTH_STEP = 10;
+
+const updateHealthText = (health: number) => {
+    setEntityMessageByName("player_health_text", health.toString());
+};
+
+// Exported so index.ts's shared Instance.OnPlayerReset can top up a single player's health right
+// as they spawn - catches late joiners whose pawn didn't exist yet during the last onRoundStart().
+export const applyHealthToPlayer = (pawn: CSPlayerPawn): void => {
+    const configuration = getConfiguration();
+    pawn.SetMaxHealth(configuration.playerHealth);
+    pawn.SetHealth(configuration.playerHealth);
+};
+
+const applyHealthToAllPlayers = () => {
+    for (const controller of Instance.GetAllPlayerControllers()) {
+        const pawn = controller.GetPlayerPawn();
+        if (!pawn || !pawn.IsValid()) continue;
+        applyHealthToPlayer(pawn);
+    }
+};
 
 const updateCheck = (show: boolean, entityName: string) => {
     const check = Instance.FindEntityByName(entityName + "_check");
@@ -29,6 +51,8 @@ export const onRoundStart = () => {
     updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
     updatePercentageText("chance_to_throw_nade_when_shooting_text", configuration.chanceToThrowGrenadeWhenShooting);
     updatePercentageText("chance_to_throw_nade_when_dealing_damage_text", configuration.chanceToThrowGrenadeWhenDealingDamage);
+    updateHealthText(configuration.playerHealth);
+    applyHealthToAllPlayers();
 };
 
 // throwNadesOnDamage.ts's configuration can change (or get restored) on a tools-mode script
@@ -112,4 +136,17 @@ Instance.OnScriptInput("toggle_only_equipped_nades", () => {
     const configuration = getConfiguration();
     configuration.onlyEquippedNades = !configuration.onlyEquippedNades;
     updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
+});
+
+Instance.OnScriptInput("player_health_increment_press", () => {
+    const configuration = getConfiguration();
+    configuration.playerHealth += HEALTH_STEP;
+    updateHealthText(configuration.playerHealth);
+    applyHealthToAllPlayers();
+});
+Instance.OnScriptInput("player_health_decrement_press", () => {
+    const configuration = getConfiguration();
+    configuration.playerHealth = Math.max(HEALTH_STEP, configuration.playerHealth - HEALTH_STEP);
+    updateHealthText(configuration.playerHealth);
+    applyHealthToAllPlayers();
 });
