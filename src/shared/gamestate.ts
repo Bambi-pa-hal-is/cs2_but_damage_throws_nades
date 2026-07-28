@@ -1,4 +1,4 @@
-import { Instance, type CSPlayerController, type CSPlayerPawn } from "cs_script/point_script";
+import { CSGearSlot, Instance, type CSPlayerController, type CSPlayerPawn } from "cs_script/point_script";
 import { persistOnReload } from "./persist";
 import { CT_TEAM, T_TEAM } from "./teams";
 
@@ -47,11 +47,33 @@ const forceRealPlayersOffT = () => {
     }
 };
 
+// DestroyWeapons() alone leaves the knife behind - it has to be found by slot and destroyed
+// separately.
+const destroyAllWeapons = (pawn: CSPlayerPawn) => {
+    pawn.DestroyWeapons();
+
+    const knife = pawn.FindWeaponBySlot(CSGearSlot.KNIFE);
+    if (knife) pawn.DestroyWeapon(knife);
+};
+
+// Before the match starts, the only weapon on the map should be the single shared
+// configuration_ak - real weapons would let everyone independently arm/configure instead of
+// having to share the one pickup.
+const stripAllWeapons = () => {
+    for (const controller of players) {
+        const pawn = controller.GetPlayerPawn();
+        if (pawn) destroyAllWeapons(pawn);
+    }
+};
+
 // forceRealPlayersOffT() above only runs when applyGameState() is called (e.g. round start) - a
 // player who spawns as T in between (say, via a manual jointeam) wouldn't be caught until the next
 // one. This catches it immediately on the actual spawn/respawn instead.
 export const onPlayerReset = (event: { player: CSPlayerPawn }) => {
     if (gameHasStarted) return;
+
+    destroyAllWeapons(event.player);
+
     if (event.player.GetTeamNumber() !== T_TEAM) return;
 
     const controller = event.player.GetPlayerController();
@@ -68,6 +90,7 @@ export const applyGameState = (): void => {
     if (!gameHasStarted) {
         refreshPlayers();
         forceRealPlayersOffT();
+        stripAllWeapons();
     }
 };
 

@@ -2,6 +2,7 @@ import { Instance } from "cs_script/point_script";
 import * as mapselect from "./mapselect";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
+import * as configurationweapon from "./configurationweapon";
 import * as throwNadesOnDamage from "./throwNadesOnDamage";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as testMpShootDroppedGrenades from "./testMpShootDroppedGrenades";
@@ -19,7 +20,7 @@ Instance.OnPlayerReset((event) => {
 });
 
 Instance.OnActivate(() => {
-    Instance.Msg("Script activated!!");
+    Instance.Msg("Script activated!!!");
     mapselect.onActivate();
     startgame.onActivate();
     throwNadesOnDamage.onActivate();
@@ -32,6 +33,7 @@ Instance.OnRoundStart(() => {
     throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();
     testMpShootDroppedGrenades.onRoundStart();
+    configurationweapon.onRoundStart();
 });
 
 Instance.OnScriptInput("StartGame", () => {
@@ -69,6 +71,7 @@ Instance.OnScriptInput("StartGame", () => {
 
 Instance.SetThink(() => {
     timers.think();
+    configurationweapon.think();
     Instance.SetNextThink(Instance.GetGameTime());
 });
 Instance.SetNextThink(Instance.GetGameTime());

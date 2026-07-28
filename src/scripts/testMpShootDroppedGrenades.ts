@@ -12,7 +12,7 @@ import * as timers from "../shared/timers";
 const TARGET_ENTITY_NAME = "test_mp_shoot_dropped_grenades_target";
 const GRENADE_TEMPLATE_NAME = "he_action_point_template";
 const CHECK_INTERVAL_SECONDS = 0.25; // 4 times per second
-const START_BUTTON_DISABLED_MESSAGE = "Before you can start, run this in console\nmp_shoot_dropped_grenades 1\nValve please fix";
+const START_BUTTON_DISABLED_MESSAGE = "Before you can start\nHost needs to run this in console\nmp_shoot_dropped_grenades 1\nValve please fix";
 
 const spawnTestGrenade = (position: Vector) => {
     const spawned = forceSpawnTemplate(GRENADE_TEMPLATE_NAME, position);
