@@ -14,8 +14,10 @@ The addon boots into a lobby map (`but_damage_throws_nades`) where players:
 
 1. Select the competitive map to play, from the official competitive map pool.
 2. Switch teams (CT/T) by shooting their own name, shown on an in-world button per player.
-3. Configure the nade-throwing rules through an in-world UI: which grenade types are allowed (HE, flashbang, smoke, molotov, decoy), whether shooting *and/or* dealing damage triggers a throw, the trigger chance for each, and whether only your currently-equipped nades can be picked.
+3. Configure the nade-throwing rules through an in-world UI: which grenade types are allowed (HE, flashbang, smoke, molotov, decoy), whether shooting *and/or* dealing damage triggers a throw, the trigger chance for each, whether only your currently-equipped nades can be picked, and each player's starting health.
 4. Press **Start Game** to load the chosen map and begin a competitive-ruleset match with those settings active.
+
+Until the match starts, everyone's own weapons are stripped and a single shared, oversized, glowing, spinning AK-47 is spawned for the whole lobby to interact with the config buttons - keeps real players from all independently arming up and causing chaos while configuring. It respawns automatically if whoever's carrying it wanders off.
 
 From then on, `OnModifyPlayerDamage` (and optionally `OnGunFire`) rolls the dice and launches a real, physics-simulated grenade of a random allowed type from the triggering player.
 
@@ -26,6 +28,7 @@ src/scripts/          Point-script entry points, one per feature
   index.ts               Wires up Instance.OnActivate / OnRoundStart / think loop
   mapselect.ts           Lobby map voting + loading the chosen map
   teamconfiguration.ts   Lobby team-pick buttons + assigning teams on start
+  configurationweapon.ts Shared configuration AK-47: spawn/glow/spin, respawn on drop
   startgame.ts           Warmup/competitive server settings, start/reset flow
   throwNadesOnDamage.ts  Core mechanic: spawning, physics correction, detonation workaround
   throwNadesOnDamageUi.ts  In-world config UI (checkboxes, chance sliders)
