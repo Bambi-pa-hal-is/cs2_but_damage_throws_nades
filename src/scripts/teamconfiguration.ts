@@ -1,311 +1,267 @@
-import { CSPlayerController, Instance, Entity, type Vector, PointTemplate } from "cs_script/point_script";
+import { CSPlayerController, Instance, Entity, type Vector } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
+import { setEntityMessage } from "../shared/ui";
+import { getPlayers, refreshPlayers, setGameHasStarted } from "../shared/gamestate";
+import { CT_TEAM, T_TEAM } from "../shared/teams";
+import { forceSpawnTemplate } from "../shared/spawn";
+import * as timers from "../shared/timers";
 
-const ctTeam = 3;
-const tTeam = 2;
 const buttonOffset = 25;
 const playerButtonNamePrefix = "test_player_button_";
 const playerButtonTextNamePrefix = "test_player_button_text_";
 
 interface Player {
-	id: number;
-	isBot: boolean;
-	name: string;
-	currentTeam: number;
-	teamToJoinWhenGameStart: number;
+    id: number;
+    isBot: boolean;
+    name: string;
+    currentTeam: number;
+    teamToJoinWhenGameStart: number;
     playerButton: PlayerButton;
-	playerController: CSPlayerController;
+    playerController: CSPlayerController;
 }
 
 interface PlayerButton {
-	buttonName: string;
-	buttonTextName: string;
+    buttonName: string;
+    buttonTextName: string;
 }
 
 interface Configuration {
-	players: Player[];
-	gameHasStarted: boolean;
-	queuedActions: (() => void)[];
+    players: Player[];
 }
 
 let configuration: Configuration = {
-	players: [],
-	gameHasStarted: false,
-	queuedActions: [],
+    players: [],
 };
 
 const findById = (id: number): Player | undefined => configuration.players.find((player) => player.id === id);
 const findByButtonName = (button: string): Player | undefined => configuration.players.find((player) => player.playerButton.buttonName === button);
 
 const upsertFromController = (controller: CSPlayerController): Player => {
-	const id = controller.GetPlayerSlot();
-	const isBot = controller.IsBot();
-	const name = controller.GetPlayerName();
-	const team = controller.GetTeamNumber();
+    const id = controller.GetPlayerSlot();
+    const isBot = controller.IsBot();
+    const name = controller.GetPlayerName();
+    const team = controller.GetTeamNumber();
 
-	const existing = findById(id);
-	if (!existing) {
-		const player: Player = {
-			id,
-			isBot,
-			name,
-			currentTeam: team,
-			playerController: controller,
-			teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? ctTeam : tTeam,
-            playerButton: createPlayerButton({position: {x:-15792, y:-14912, z:-15759}, id: id.toString()})!,
-		};
-		configuration.players.push(player);
-		Instance.Msg(`Player added: ${name} (id=${id}, bot=${isBot}, team=${team})`);
-		return player;
-	}
-	else{
-		Instance.Msg(`Player updated: ${name} (id=${id}, bot=${isBot}, team=${team})`);
-	}
+    const existing = findById(id);
+    if (!existing) {
+        const player: Player = {
+            id,
+            isBot,
+            name,
+            currentTeam: team,
+            playerController: controller,
+            teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? CT_TEAM : T_TEAM,
+            playerButton: createPlayerButton({ position: { x: -15792, y: -14912, z: -15759 }, id: id.toString() }),
+        };
+        configuration.players.push(player);
+        return player;
+    }
 
-	existing.isBot = isBot;
-	existing.name = name;
-	existing.currentTeam = team;
-	return existing;
+    existing.isBot = isBot;
+    existing.name = name;
+    existing.currentTeam = team;
+    return existing;
 };
 
 const removeById = (id: number): void => {
-	const index = configuration.players.findIndex((player) => player.id === id);
-	if (index === -1) {
-		return;
-	}
+    const index = configuration.players.findIndex((player) => player.id === id);
+    if (index === -1) {
+        return;
+    }
 
-	const [removed] = configuration.players.splice(index, 1);
-	killPlayerButton(removed.playerButton);
-	Instance.Msg(`Player removed: ${removed.name} (id=${id})`);
+    const [removed] = configuration.players.splice(index, 1);
+    killPlayerButton(removed.playerButton);
 };
 
 const updateUi = (): void => {
-	const ctAnchor = Instance.FindEntityByName("ct_players");
-	const tAnchor = Instance.FindEntityByName("t_players");
+    const ctAnchor = Instance.FindEntityByName("ct_players");
+    const tAnchor = Instance.FindEntityByName("t_players");
 
-	if (!ctAnchor || !tAnchor) {
-		Instance.Msg("Cannot find ct or t anchors");
-		return;
-	}
+    if (!ctAnchor || !tAnchor) {
+        Instance.Msg("Cannot find ct or t anchors");
+        return;
+    }
 
-	let tOffset = 0;
-	let ctOffset = 0;
+    let tOffset = 0;
+    let ctOffset = 0;
+    // Only schedule one retry per updateUi() call, no matter how many players are missing a button -
+    // scheduling one per missing player made this schedule N new calls to itself every pass, each of
+    // which would do the same, growing exponentially instead of just retrying once per tick.
+    let needsRetry = false;
 
-	Instance.Msg(`Updating UI for ${configuration.players.length} players`);
+    for (let i = 0; i < configuration.players.length; i++) {
+        const player = configuration.players[i];
+        const playerButton = Instance.FindEntityByName(player.playerButton.buttonName);
+        const playerButtonText = Instance.FindEntityByName(player.playerButton.buttonTextName);
+        if (!playerButton || !playerButtonText) {
+            Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
+            createPlayerButton({ position: { x: -0, y: -0, z: -0 }, id: player.id.toString() }); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
+            needsRetry = true;
+            continue;
+        }
 
-	for (let i = 0; i < configuration.players.length; i++) {
-		const player = configuration.players[i];
-		const playerButton = Instance.FindEntityByName(player.playerButton.buttonName);
-		const playerButtonText = Instance.FindEntityByName(player.playerButton.buttonTextName);
-		if (!playerButton || !playerButtonText) {
-			Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
-			createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()}); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
-			runNextThink(updateUi);
-			continue;
-		}
+        const anchor: Entity = (player.teamToJoinWhenGameStart === CT_TEAM ? ctAnchor : tAnchor)!;
+        if (anchor === tAnchor) {
+            tOffset -= buttonOffset;
+        } else {
+            ctOffset -= buttonOffset;
+        }
+        const base = anchor.GetAbsOrigin();
+        playerButton.Teleport({
+            position: {
+                x: base.x,
+                y: base.y,
+                z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+            }
+        });
 
-		const anchor: Entity = (player.teamToJoinWhenGameStart === ctTeam ? ctAnchor : tAnchor)!;
-		if (anchor === tAnchor) {
-			tOffset -= buttonOffset;
-		} else {
-			ctOffset -= buttonOffset;
-		}
-		const base = anchor.GetAbsOrigin();
-		playerButton.Teleport({
-			position: {
-				x: base.x,
-				y: base.y,
-				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-			}
-		});
+        const namePrefix = player.isBot ? "BOT " : "";
 
-		const namePrefix = player.isBot ? "BOT " : "";
+        playerButtonText.Teleport({
+            position: {
+                x: base.x,
+                y: base.y,
+                z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
+            }
+        });
 
-		playerButtonText.Teleport({
-			position: {
-				x: base.x,
-				y: base.y,
-				z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-			}
-		});
+        setEntityMessage(playerButtonText, `${namePrefix}${player.name}`);
+    }
 
-		Instance.EntFireAtTarget({
-			target: playerButtonText,
-			input: "setmessage",
-			value: `${namePrefix}${player.name}`,
-			delay: 0,
-		});
-	}
+    if (needsRetry) {
+        timers.setTimeout(updateUi, 0);
+    }
 };
 
 const updatePlayerTeams = (): void => {
-	for (const player of configuration.players) {
-		const desiredTeam = player.teamToJoinWhenGameStart;
+    for (const player of configuration.players) {
+        const desiredTeam = player.teamToJoinWhenGameStart;
 
-		if (!player.playerController?.IsValid?.()) {
-			Instance.Msg(`No valid controller found for player id=${player.id}, skipping team change.`);
-			continue;
-		}
+        if (!player.playerController?.IsValid?.()) {
+            Instance.Msg(`No valid controller found for player id=${player.id}, skipping team change.`);
+            continue;
+        }
 
-		try {
-			player.playerController.JoinTeam(desiredTeam);
-			player.currentTeam = desiredTeam;
-			Instance.Msg(`Moved player: ${player.name} (id=${player.id}) to team ${desiredTeam}`);
-		} catch (error) {
-			Instance.Msg(`Failed to move player id=${player.id} : ${error}`);
-		}
-	}
+        try {
+            player.playerController.JoinTeam(desiredTeam);
+            player.currentTeam = desiredTeam;
+        } catch (error) {
+            Instance.Msg(`Failed to move player id=${player.id} : ${error}`);
+        }
+    }
 };
 
 Instance.OnPlayerConnect((event) => {
-	const playerController = event?.player;
-	if (!playerController?.IsValid?.()) {
-		return;
-	}
+    const playerController = event?.player;
+    if (!playerController?.IsValid?.()) {
+        return;
+    }
 
-	upsertFromController(playerController);
-	runNextThink(updateUi);
+    upsertFromController(playerController);
+    timers.setTimeout(updateUi, 0);
 });
 
-Instance.OnRoundStart(() => {
-	updateUi();
-});
+export const onRoundStart = () => {
+    timers.setTimeout(() => {
+        syncPlayersFromGameState();
+        timers.setTimeout(updateUi, 0);
+    }, 0);
+};
 
 Instance.OnPlayerActivate((event) => {
-	const playerController = event?.player;
-	if (!playerController?.IsValid?.()) {
-		return;
-	}
+    const playerController = event?.player;
+    if (!playerController?.IsValid?.()) {
+        return;
+    }
 
-	upsertFromController(playerController);
-	runNextThink(updateUi);
+    upsertFromController(playerController);
+    timers.setTimeout(updateUi, 0);
 });
 
 Instance.OnPlayerDisconnect((event) => {
-	if (typeof event?.playerSlot !== "number") {
-		return;
-	}
+    if (typeof event?.playerSlot !== "number") {
+        return;
+    }
 
-	removeById(event.playerSlot);
-	runNextThink(updateUi);
+    removeById(event.playerSlot);
+    timers.setTimeout(updateUi, 0);
 });
 
-Instance.OnActivate(() => {
-	const maxSlots = 100;
-	runNextThink(() => {
-		for (let slot = 0; slot < maxSlots; slot += 1) 
-		{
-			const controller = Instance.GetPlayerController(slot);
-			if (controller && controller?.IsValid()) {
-				upsertFromController(controller);
-			}
-		}	
-		runNextThink(updateUi);
-	});
-});
+const syncPlayersFromGameState = (): void => {
+    refreshPlayers();
+    for (const controller of getPlayers()) {
+        upsertFromController(controller);
+    }
+};
+
+export const onActivate = () => {
+    timers.setTimeout(() => {
+        syncPlayersFromGameState();
+        timers.setTimeout(updateUi, 0);
+    }, 0);
+};
 
 Instance.OnScriptInput("TogglePlayerTeam", (event) => {
-	const buttonEntity = event.caller;
-	if (!buttonEntity) {
-		Instance.Msg(`Cannot identify button entity from caller`);
-		return;
-	}
+    const buttonEntity = event.caller;
+    if (!buttonEntity) {
+        Instance.Msg(`Cannot identify button entity from caller`);
+        return;
+    }
 
-	let player = findByButtonName(buttonEntity.GetEntityName());
-	if (!player) {
-		Instance.Msg(`Cannot find player associated with button entity`);
-		return;
-	}
+    const player = findByButtonName(buttonEntity.GetEntityName());
+    if (!player) {
+        Instance.Msg(`Cannot find player associated with button entity`);
+        return;
+    }
 
-	player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === ctTeam ? tTeam : ctTeam;
-	killPlayerButton(player.playerButton); //Moving buttons that have been pressed results in a button that slowly slides away for some reason so we just destroy and recreate it.
-	runNextThink(() => {
-		var newPlayerButton = createPlayerButton({position: {x:-0, y:-0, z:-0}, id: player.id.toString()});
-		if (newPlayerButton) {
-			player.playerButton = newPlayerButton;
-		}
-		runNextThink(updateUi);
-	});
+    player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === CT_TEAM ? T_TEAM : CT_TEAM;
+    killPlayerButton(player.playerButton); //Moving buttons that have been pressed results in a button that slowly slides away for some reason so we just destroy and recreate it.
+    timers.setTimeout(() => {
+        player.playerButton = createPlayerButton({ position: { x: -0, y: -0, z: -0 }, id: player.id.toString() });
+        timers.setTimeout(updateUi, 0);
+    }, 0);
 });
 
-Instance.OnScriptInput("StartGame", () => {
-	configuration.gameHasStarted = true;
-	updatePlayerTeams();
-});
+export const onStartGame = () => {
+    updatePlayerTeams();
+};
 
-Instance.OnScriptReload({
-	before: () => ({ configuration }),
-	after: (memory) => {
-		if (memory?.configuration) {
-			configuration = memory.configuration;
-		}
-	},
+persistOnReload("teamconfiguration", {
+    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
+}, () => {
+    syncPlayersFromGameState();
+    timers.setTimeout(updateUi, 0);
 });
 
 const killPlayerButton = (playerButton: PlayerButton) => {
-	Instance.EntFireAtName({
-		name: playerButton.buttonName,
-		input: "kill",
-	});
-	Instance.EntFireAtName({
-		name: playerButton.buttonTextName,
-		input: "kill",
-	});
+    Instance.EntFireAtName({
+        name: playerButton.buttonName,
+        input: "kill",
+    });
+    Instance.EntFireAtName({
+        name: playerButton.buttonTextName,
+        input: "kill",
+    });
 };
 
-const createPlayerButton = (data: {position: Vector, id:string}): PlayerButton | null => {
+// Always returns valid (deterministic) names, even if the actual spawn below fails - updateUi()
+// already retries FindEntityByName every think until a button by that name actually exists, so
+// there's no need for a null/PlayerButton|null result here.
+const createPlayerButton = (data: { position: Vector, id: string }): PlayerButton => {
+    const buttonName = playerButtonNamePrefix + data.id;
+    const buttonTextName = playerButtonTextNamePrefix + data.id;
 
-    const template = Instance.FindEntityByName("player_button_point_template");
-    if (!template) {
-        Instance.Msg("player_button_point_template not found");
-        return null;
+    const spawned = forceSpawnTemplate("player_button_point_template", data.position);
+    if (spawned && spawned.length >= 2) {
+        const [button, buttonText] = spawned;
+
+        button.Teleport({ position: data.position });
+        buttonText.Teleport({ position: data.position });
+
+        setEntityMessage(buttonText, "New text");
+        button.SetEntityName(buttonName);
+        buttonText.SetEntityName(buttonTextName);
     }
 
-    if (!(template instanceof PointTemplate)) {
-        Instance.Msg("player_button_point_template is not of type point template");
-        return null;
-    }
-
-
-    const spawned = template.ForceSpawn(data.position);
-    if (!spawned || spawned.length < 2) {
-        return null;
-    }
-
-    const [button, buttonText] = spawned;
-
-    button.Teleport({
-        position: data.position,
-    });
-
-    buttonText.Teleport({
-        position: data.position,
-    });
-	Instance.Msg("Created player button!!!");
-    Instance.EntFireAtTarget({
-        target: buttonText,
-        input: "setmessage",
-        value: "New text",
-        delay: 0,
-    });
-	let buttonName = playerButtonNamePrefix + data.id;
-	let buttonTextName = playerButtonTextNamePrefix + data.id;
-	button.SetEntityName(buttonName);
-	buttonText.SetEntityName(buttonTextName);
-    return {buttonName: buttonName, buttonTextName: buttonTextName};
+    return { buttonName, buttonTextName };
 };
-
-
-const runNextThink = (action: () => void) => {
-  configuration.queuedActions.push(action);
-}
-
-
-Instance.SetThink(() => {
-  const actions = configuration.queuedActions.splice(0, configuration.queuedActions.length);
-
-  for (let i=0;i!=actions.length;i++) {
-      actions[i]();
-  }
-  Instance.SetNextThink(Instance.GetGameTime());
-});
-Instance.SetNextThink(Instance.GetGameTime());

@@ -1,20 +1,44 @@
-import { BaseModelEntity, CSDamageTypes, CSGearSlot, CSPlayerController, CSPlayerPawn, Entity, Instance, PointTemplate, type QAngle, type Vector } from "cs_script/point_script";
+import { CSDamageTypes, CSPlayerPawn, Entity, Instance, type QAngle, type Vector } from "cs_script/point_script";
+import { persistOnReload } from "../shared/persist";
+import { getGameHasStarted } from "../shared/gamestate";
+import { forceSpawnTemplate } from "../shared/spawn";
+import { vectorLength } from "../shared/vector";
+import * as timers from "../shared/timers";
 
-var configuration = {
+export type NadeType = "he" | "flashbang" | "smoke" | "molotov" | "decoy";
+
+export interface ThrowNadesConfiguration {
+    throwGrenadeWhenShooting: boolean;
+    chanceToThrowGrenadeWhenShooting: number;
+    throwGrenadeWhenDealingDamage: boolean;
+    chanceToThrowGrenadeWhenDealingDamage: number;
+    isHeAllowed: boolean;
+    isFlashbangAllowed: boolean;
+    isSmokeAllowed: boolean;
+    isMolotovAllowed: boolean;
+    isDecoyAllowed: boolean;
+    onlyEquippedNades: boolean;
+    projectileSpeed: number;
+    playerHealth: number;
+}
+
+let configuration: ThrowNadesConfiguration = {
     throwGrenadeWhenShooting: false,
-    chanceToThrowGrenadeWhenShooting: 0.1,
+    chanceToThrowGrenadeWhenShooting: 1.0,
     throwGrenadeWhenDealingDamage: true,
     chanceToThrowGrenadeWhenDealingDamage: 1.0,
-    isHeAllowed : true,
-    isFlashbangAllowed: true,
+    isHeAllowed: true,
+    isFlashbangAllowed: false,
     isSmokeAllowed: true,
     isMolotovAllowed: true,
     isDecoyAllowed: false,
-    onlyEquippedNades: true,
+    onlyEquippedNades: false,
     projectileSpeed: 675.0,
-}
+    playerHealth: 300,
+};
 
-type NadeType = "he" | "flashbang" | "smoke" | "molotov" | "decoy";
+// The UI module reads/writes fields on this directly - it's the single shared source of truth.
+export const getConfiguration = (): ThrowNadesConfiguration => configuration;
 
 // The real thrown projectile, same templates as before. These fly with proper physics but,
 // since Valve's engine update, he/smoke/molotov no longer self-detonate when spawned via script.
@@ -37,6 +61,33 @@ const actionTemplateNameByType: Partial<Record<NadeType, string>> = {
     decoy: "decoy_action_point_template",
 };
 
+// Used to detect which grenades a player actually has equipped (for onlyEquippedNades) and, for the
+// molotov family specifically, whether they're carrying a real molotov or an incendiary.
+const weaponNamesByNadeType: Record<NadeType, string[]> = {
+    he: ["weapon_hegrenade"],
+    flashbang: ["weapon_flashbang"],
+    smoke: ["weapon_smokegrenade"],
+    molotov: ["weapon_molotov", "weapon_incgrenade"],
+    decoy: ["weapon_decoy"],
+};
+
+const isNadeTypeEquipped = (pawn: CSPlayerPawn, nadeType: NadeType): boolean =>
+    weaponNamesByNadeType[nadeType].some((weaponName) => pawn.FindWeapon(weaponName) !== undefined);
+
+const INCENDIARY_WEAPON_NAME = "weapon_incgrenade";
+const INCENDIARY_ACTION_TEMPLATE_NAME = "inc_action_point_template";
+
+// The incendiary grenade's own projectile is bugged and can't be spawned, so the molotov family
+// always launches via the molotov projectile (see projectileTemplateNameByType). But if the player
+// is actually carrying an incendiary rather than a real molotov, the detonation pickup - and
+// therefore the resulting fire - should still look/act like an incendiary.
+const getActionTemplateName = (pawn: CSPlayerPawn, nadeType: NadeType): string | undefined => {
+    if (nadeType === "molotov" && pawn.FindWeapon(INCENDIARY_WEAPON_NAME) !== undefined) {
+        return INCENDIARY_ACTION_TEMPLATE_NAME;
+    }
+    return actionTemplateNameByType[nadeType];
+};
+
 // Condition that decides when a spawned grenade gets force-detonated via damage. He/molotov use a
 // fixed delay; smoke and decoy instead wait until they stop moving (settled on the ground), matching
 // how they'd normally pop once at rest.
@@ -53,104 +104,10 @@ const detonationTriggerByNadeType: Partial<Record<NadeType, DetonationTrigger>> 
     decoy: { kind: "stoppedMoving", speedThreshold: STOPPED_MOVING_SPEED_THRESHOLD },
 };
 
-const updateCheck = (show: boolean, entityName: string) => {
-    var check = Instance.FindEntityByName(entityName + "_check");
-    if(check instanceof BaseModelEntity)
-    {
-        var size = show ? 1.0 : 0.0;
-        check.SetModelScale(size);
-    }
-}
-
-const updatePercentageText = (entityName: string, percent: number) => {
-    var text = Math.floor(percent * 100) + "%";
-    Instance.EntFireAtName(entityName, "setmessage",text,0);
-}
-
-Instance.OnActivate(() => {
+export const onActivate = () => {
     Instance.ServerCommand("mp_shoot_dropped_grenades 1");
-});
-
-Instance.OnRoundStart(() => {
-    updateCheck(configuration.throwGrenadeWhenShooting, "throw_a_nade_when_shooting_button");
-    updateCheck(configuration.throwGrenadeWhenDealingDamage, "throw_a_nade_when_dealing_damage_button");
-    updateCheck(configuration.isHeAllowed, "allow_he_button");
-    updateCheck(configuration.isFlashbangAllowed, "allow_flashbang_button");
-    updateCheck(configuration.isSmokeAllowed, "allow_smoke_button");
-    updateCheck(configuration.isMolotovAllowed, "allow_molotov_button");
-    updateCheck(configuration.isDecoyAllowed, "allow_decoy_button");
-    updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-})
-
-Instance.OnScriptInput("toggle_throw_nade_when_shooting", () => {
-    Instance.Msg("TOGGLE NADE WHEN SHOOTING");
-    configuration.throwGrenadeWhenShooting = !configuration.throwGrenadeWhenShooting;
-    updateCheck(configuration.throwGrenadeWhenShooting, "throw_a_nade_when_shooting_button");
-});
-
-Instance.OnScriptInput("toggle_throw_nade_when_dealing_damage", () => {
-    configuration.throwGrenadeWhenDealingDamage = !configuration.throwGrenadeWhenDealingDamage;
-    updateCheck(configuration.throwGrenadeWhenDealingDamage, "throw_a_nade_when_dealing_damage_button");
-});
-
-Instance.OnScriptInput("throw_a_nade_when_shooting_increment_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenShooting+=0.01;
-    configuration.chanceToThrowGrenadeWhenShooting = Math.max(configuration.chanceToThrowGrenadeWhenShooting,0.0);
-    configuration.chanceToThrowGrenadeWhenShooting = Math.min(configuration.chanceToThrowGrenadeWhenShooting,1.0);
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-});
-Instance.OnScriptInput("throw_a_nade_when_shooting_decrement_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenShooting-=0.01;
-    configuration.chanceToThrowGrenadeWhenShooting = Math.max(configuration.chanceToThrowGrenadeWhenShooting,0.0);
-    configuration.chanceToThrowGrenadeWhenShooting = Math.min(configuration.chanceToThrowGrenadeWhenShooting,1.0);
-    updatePercentageText("chance_to_throw_nade_when_shooting_text",configuration.chanceToThrowGrenadeWhenShooting);
-});
-
-Instance.OnScriptInput("throw_a_nade_when_dealing_damage_increment_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenDealingDamage+=0.01;
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.max(configuration.chanceToThrowGrenadeWhenDealingDamage,0.0);
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.min(configuration.chanceToThrowGrenadeWhenDealingDamage,1.0);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-});
-Instance.OnScriptInput("throw_a_nade_when_dealing_damage_decrement_chance_press", () => {
-    configuration.chanceToThrowGrenadeWhenDealingDamage-=0.01;
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.max(configuration.chanceToThrowGrenadeWhenDealingDamage,0.0);
-    configuration.chanceToThrowGrenadeWhenDealingDamage = Math.min(configuration.chanceToThrowGrenadeWhenDealingDamage,1.0);
-    updatePercentageText("chance_to_throw_nade_when_dealing_damage_text",configuration.chanceToThrowGrenadeWhenDealingDamage);
-});
-
-Instance.OnScriptInput("toggle_he", () => {
-    configuration.isHeAllowed = !configuration.isHeAllowed;
-    updateCheck(configuration.isHeAllowed, "allow_he_button");
-});
-
-Instance.OnScriptInput("toggle_flashbang", () => {
-    configuration.isFlashbangAllowed = !configuration.isFlashbangAllowed;
-    updateCheck(configuration.isFlashbangAllowed, "allow_flashbang_button");
-});
-
-Instance.OnScriptInput("toggle_smoke", () => {
-    configuration.isSmokeAllowed = !configuration.isSmokeAllowed;
-    updateCheck(configuration.isSmokeAllowed, "allow_smoke_button");
-});
-
-Instance.OnScriptInput("toggle_molotov", () => {
-    configuration.isMolotovAllowed = !configuration.isMolotovAllowed;
-    updateCheck(configuration.isMolotovAllowed, "allow_molotov_button");
-});
-
-Instance.OnScriptInput("toggle_decoy", () => {
-    configuration.isDecoyAllowed = !configuration.isDecoyAllowed;
-    updateCheck(configuration.isDecoyAllowed, "allow_decoy_button");
-});
-
-Instance.OnScriptInput("toggle_only_equipped_nades", () => {
-    configuration.onlyEquippedNades = !configuration.onlyEquippedNades;
-    updateCheck(configuration.onlyEquippedNades, "only_random_equipped_nades_button");
-});
-
+    timers.setTimeout(processPending, 0);
+};
 
 const deg2rad = (deg: number) => { return (deg * Math.PI) / 180.0; }
 
@@ -167,21 +124,9 @@ const vecScale = (v: { x: number; y: number; z: number; }, s: number) => {
     return { x: v.x * s, y: v.y * s, z: v.z * s };
 };
 
-
 const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector, eyeAng: QAngle, velocity: Vector) : Entity | undefined => {
-    const template = Instance.FindEntityByName(templateName);
-    if (!template) {
-        Instance.Msg(`${templateName} not found`);
-        return;
-    }
-    if(!(template instanceof PointTemplate))
-    {
-        Instance.Msg(`${templateName} is not of type point template`);
-        return;
-    }
-
-    const spawned = template.ForceSpawn(eyePos,eyeAng);
-    if (!spawned || spawned.length === 0) return;
+    const spawned = forceSpawnTemplate(templateName, eyePos, eyeAng);
+    if (!spawned) return;
     const entity = spawned[0];
 
     entity.SetOwner(pawn); //Does this even do anything?!?!
@@ -202,13 +147,13 @@ const spawnAndLaunch = (templateName: string, pawn: CSPlayerPawn, eyePos: Vector
     return entity;
 };
 
-type PendingDetonation = { nadeType: NadeType; projectile: Entity; pawn: CSPlayerPawn; detonateAt?: number };
+type PendingDetonation = { nadeType: NadeType; projectile: Entity; pawn: CSPlayerPawn; detonateAt?: number; actionTemplateName: string };
 
-var pendingDetonations: PendingDetonation[] = [];
+let pendingDetonations: PendingDetonation[] = [];
 
-const scheduleDetonation = (nadeType: NadeType, projectile: Entity, pawn: CSPlayerPawn, trigger: DetonationTrigger) => {
+const scheduleDetonation = (nadeType: NadeType, projectile: Entity, pawn: CSPlayerPawn, trigger: DetonationTrigger, actionTemplateName: string) => {
     const detonateAt = trigger.kind === "delay" ? Instance.GetGameTime() + trigger.seconds : undefined;
-    pendingDetonations.push({ nadeType, projectile, pawn, detonateAt });
+    pendingDetonations.push({ nadeType, projectile, pawn, detonateAt, actionTemplateName });
 };
 
 const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => {
@@ -219,19 +164,18 @@ const isReadyToDetonate = (pending: PendingDetonation, now: number): boolean => 
         return pending.detonateAt !== undefined && now >= pending.detonateAt;
     }
 
-    const velocity = pending.projectile.GetAbsVelocity();
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+    const speed = vectorLength(pending.projectile.GetAbsVelocity());
     return speed < trigger.speedThreshold;
 };
 
 // Tracks the type/thrower of every live projectile so other events (e.g. OnGrenadeBounce) can
 // identify which nade type they're dealing with, since those events only expose the entity.
-type ThrownProjectile = { entity: Entity; nadeType: NadeType; pawn: CSPlayerPawn; lastVelocityZ?: number; lastSampleTime?: number };
+type ThrownProjectile = { entity: Entity; nadeType: NadeType; pawn: CSPlayerPawn; actionTemplateName?: string; lastVelocityZ?: number; lastSampleTime?: number };
 
-var thrownProjectiles: ThrownProjectile[] = [];
+let thrownProjectiles: ThrownProjectile[] = [];
 
-const trackProjectile = (entity: Entity, nadeType: NadeType, pawn: CSPlayerPawn) => {
-    thrownProjectiles.push({ entity, nadeType, pawn });
+const trackProjectile = (entity: Entity, nadeType: NadeType, pawn: CSPlayerPawn, actionTemplateName?: string) => {
+    thrownProjectiles.push({ entity, nadeType, pawn, actionTemplateName });
 };
 
 const untrackProjectile = (entity: Entity) => {
@@ -243,11 +187,18 @@ const untrackProjectile = (entity: Entity) => {
 
 // There's no gravity getter/setter in the cs_script API, so gravity can't be read or set directly.
 // Each tracked nade's actual fall acceleration is measured every tick (logged below) by diffing
-// velocity.z between ticks - e.g. flashbang measured a consistent 320 u/s^2 versus the ~800 u/s^2
-// standard gravity every other type uses. For any type listed here, its measured acceleration gets
-// corrected up/down toward the given target (u/s^2) every tick. Types left out are untouched.
+// velocity.z between ticks. test_grenade_physics.ts measured real native HE throws falling at a
+// consistent -320 u/s^2 (12/12 samples, exact match every time) - the same number originally
+// flagged as flashbang's "anomaly". Our own ForceSpawn'd he/smoke/molotov/decoy replicas default to
+// generic-physics-prop gravity (~800 u/s^2) instead, so those are the ones that are actually wrong
+// and need pulling down to 320 to match real grenades. Flashbang's replica already naturally falls
+// at 320, so it's left out here (no correction needed). For any type listed here, its measured
+// acceleration gets corrected up/down toward the given target (u/s^2) every tick.
 const gravityAccelTargetByNadeType: Partial<Record<NadeType, number>> = {
-    flashbang: 800,
+    he: 320,
+    smoke: 320,
+    molotov: 320,
+    decoy: 320,
 };
 
 const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
@@ -259,7 +210,6 @@ const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
         const dt = now - tracked.lastSampleTime;
         if (dt > 0) {
             const measuredAccel = (tracked.lastVelocityZ - velocity.z) / dt;
-            Instance.Msg(`${tracked.nadeType} measured gravity: ${measuredAccel.toFixed(1)} u/s^2 (vz=${velocity.z.toFixed(1)})`);
 
             const targetAccel = gravityAccelTargetByNadeType[tracked.nadeType];
             if (targetAccel !== undefined) {
@@ -278,28 +228,18 @@ const updateProjectileGravity = (tracked: ThrownProjectile, now: number) => {
 // Spawns the correct pickup grenade for this nade type at the projectile's current position,
 // damages it to force detonation, then instantly kills it - it only exists to trigger the explosion.
 const detonate = (pending: PendingDetonation) => {
-    Instance.Msg(`Detonating ${pending.nadeType} at game time ${Instance.GetGameTime()}`);
-
     // Idempotent: whether this was triggered by the timer or by an early wall bounce, make sure
     // there's no leftover scheduled detonation left to fire again for the same projectile.
     pendingDetonations = pendingDetonations.filter((p) => p.projectile !== pending.projectile);
     untrackProjectile(pending.projectile);
 
     const position = pending.projectile.IsValid() ? pending.projectile.GetAbsOrigin() : pending.pawn.GetEyePosition();
-    Instance.Msg(`${pending.nadeType} detonation position: ${JSON.stringify(position)}`);
 
     if (pending.projectile.IsValid()) {
         Instance.EntFireAtTarget({ target: pending.projectile, input: "kill" });
-        Instance.Msg(`Killed ${pending.nadeType} projectile`);
-    } else {
-        Instance.Msg(`${pending.nadeType} projectile was already invalid at detonation time`);
     }
 
-    const actionTemplateName = actionTemplateNameByType[pending.nadeType];
-    if (!actionTemplateName) {
-        Instance.Msg(`No action template configured for ${pending.nadeType}, skipping detonation`);
-        return;
-    }
+    const actionTemplateName = pending.actionTemplateName;
 
     const eyeAng = pending.pawn.GetEyeAngles();
     const pickupGrenade = spawnAndLaunch(actionTemplateName, pending.pawn, position, eyeAng, { x: 0, y: 0, z: 0 });
@@ -308,25 +248,24 @@ const detonate = (pending: PendingDetonation) => {
         return;
     }
 
-    Instance.Msg(`Damaging pickup grenade ${actionTemplateName} to force ${pending.nadeType} detonation`);
     pickupGrenade.TakeDamage({ damage: 100, damageTypes: CSDamageTypes.BULLET, attacker: pending.pawn });
     Instance.EntFireAtTarget({ target: pickupGrenade, input: "kill", delay: 0.5 });
 };
 
-Instance.SetThink(() => {
+// Runs every tick via the shared timer module (self-reschedules with a 0s delay) instead of
+// index.ts pumping a dedicated think() export.
+const processPending = () => {
     const now = Instance.GetGameTime();
     const remaining: PendingDetonation[] = [];
     for (const pending of pendingDetonations) {
         if (!pending.projectile.IsValid()) {
             // Already gone by some other means (e.g. a smoke consumed by a burning molotov
             // detonates itself) - our workaround has nothing left to do, just drop it.
-            Instance.Msg(`${pending.nadeType} projectile no longer valid before our detonation trigger fired, ignoring`);
             untrackProjectile(pending.projectile);
             continue;
         }
 
         if (isReadyToDetonate(pending, now)) {
-            Instance.Msg(`Detonation trigger fired for ${pending.nadeType} (now=${now})`);
             detonate(pending);
         } else {
             remaining.push(pending);
@@ -339,31 +278,38 @@ Instance.SetThink(() => {
     }
     thrownProjectiles = thrownProjectiles.filter((p) => p.entity.IsValid());
 
-    Instance.SetNextThink(now);
-});
-Instance.SetNextThink(Instance.GetGameTime());
+    timers.setTimeout(processPending, 0);
+};
+
+// Real CS2 grenades get a slight upward toss baked into the throw regardless of exact aim (confirmed
+// by throwing dead-level with a static crosshair and still measuring upward velocity). Without this,
+// ours launch perfectly flat and fly noticeably straighter than the real thing. Starting guess - tune
+// by comparing a level-aim mod throw against a level-aim real throw in test_grenade_physics.ts.
+const THROW_UPWARD_ANGLE_DEGREES = 12;
 
 const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | undefined => {
     const eyePos = pawn.GetEyePosition();
     const eyeAng = pawn.GetEyeAngles();
-    const fwd = forwardFromAngles(eyeAng);
+    // Source pitch is +down/-up, so subtracting tilts the launch direction upward.
+    const throwAng = { pitch: eyeAng.pitch - THROW_UPWARD_ANGLE_DEGREES, yaw: eyeAng.yaw, roll: eyeAng.roll };
+    const fwd = forwardFromAngles(throwAng);
     let velocity = vecScale(fwd, configuration.projectileSpeed);
     const playerVelocity = pawn.GetAbsVelocity();
     velocity.x += playerVelocity.x;
     velocity.y += playerVelocity.y;
     velocity.z += playerVelocity.z;
 
-    Instance.Msg(`Throwing ${nadeType} for ${pawn.GetEntityName()} at ${JSON.stringify(eyePos)} with velocity ${JSON.stringify(velocity)}`);
-
     const projectile = spawnAndLaunch(projectileTemplateNameByType[nadeType], pawn, eyePos, eyeAng, velocity);
     if (!projectile) return;
 
-    trackProjectile(projectile, nadeType, pawn);
+    // Resolved once, at throw time, so a later weapon switch can't change what the detonation
+    // (scheduled or bounce-triggered) ends up spawning.
+    const actionTemplateName = getActionTemplateName(pawn, nadeType);
+    trackProjectile(projectile, nadeType, pawn, actionTemplateName);
 
     const detonationTrigger = detonationTriggerByNadeType[nadeType];
-    const actionTemplateName = actionTemplateNameByType[nadeType];
     if (detonationTrigger !== undefined && actionTemplateName) {
-        scheduleDetonation(nadeType, projectile, pawn, detonationTrigger);
+        scheduleDetonation(nadeType, projectile, pawn, detonationTrigger, actionTemplateName);
     } else {
         // Self-detonating nades (flashbang/decoy): fall back to the old safety-net kill.
         Instance.EntFireAtTarget({
@@ -376,9 +322,7 @@ const throwNadeForPlayer = (pawn: CSPlayerPawn, nadeType: NadeType) : Entity | u
     return projectile;
 };
 
-
-
-const getRandomAllowedNadeType = () : NadeType | null => {
+const getRandomAllowedNadeType = (pawn: CSPlayerPawn) : NadeType | null => {
     const allowedNades : NadeType[] = [];
 
     if (configuration.isHeAllowed) allowedNades.push("he");
@@ -387,68 +331,63 @@ const getRandomAllowedNadeType = () : NadeType | null => {
     if (configuration.isMolotovAllowed) allowedNades.push("molotov");
     if (configuration.isDecoyAllowed) allowedNades.push("decoy");
 
-    if (allowedNades.length === 0) return null;
+    const candidates = configuration.onlyEquippedNades
+        ? allowedNades.filter((nadeType) => isNadeTypeEquipped(pawn, nadeType))
+        : allowedNades;
 
-    const randomIndex = Math.floor(Math.random() * allowedNades.length);
-    return allowedNades[randomIndex];
+    if (candidates.length === 0) return null;
+
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    return candidates[randomIndex];
 };
 
 // --- main hook ---
-// TA INTE BORT/// DET FUNGERA FÖR FLASH
 Instance.OnGunFire((event) => {
+    if (!getGameHasStarted()) return;
+
     const shooter = event.weapon.GetOwner();
     if (!shooter) return;
 
-    var randomValue = Math.random();
+    const randomValue = Math.random();
     if(configuration.throwGrenadeWhenShooting && randomValue < configuration.chanceToThrowGrenadeWhenShooting)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType();
+        const nadeType = getRandomAllowedNadeType(shooter);
         if(!nadeType) return;
         throwNadeForPlayer(shooter, nadeType);
     }
 });
 
-Instance.OnBeforePlayerDamage((event) => {
+Instance.OnModifyPlayerDamage((event) => {
+    if (!getGameHasStarted()) return;
 
-    var attacker = event.attacker;
+    const attacker = event.attacker;
     if (!attacker) return;
     if (!(attacker instanceof CSPlayerPawn))
     {
         Instance.Msg("attacker not playercontroller");
         return;
     }
-    var randomValue = Math.random();
+    const randomValue = Math.random();
     if(configuration.throwGrenadeWhenDealingDamage && randomValue < configuration.chanceToThrowGrenadeWhenDealingDamage)
     {
         //throw nade
-        var nadeType = getRandomAllowedNadeType();
+        const nadeType = getRandomAllowedNadeType(attacker);
         if(!nadeType) return;
         throwNadeForPlayer(attacker, nadeType);
     }
 });
 
-Instance.OnScriptReload({
-    before: () => {
-        return { configuration, pendingDetonations, thrownProjectiles };
-    },
-    after: (memory) => {
-        if (memory && memory.configuration !== undefined) {
-            configuration = memory.configuration;
-        }
-        if (memory && memory.pendingDetonations !== undefined) {
-            pendingDetonations = memory.pendingDetonations;
-        }
-        if (memory && memory.thrownProjectiles !== undefined) {
-            thrownProjectiles = memory.thrownProjectiles;
-        }
-    },
-});
-
-Instance.OnGrenadeThrow((event) => {
-    var velocity = event.projectile.GetAbsVelocity();
-    var speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
-    Instance.Msg("Grenade thrown with speed: " + speed);
+persistOnReload("throwNadesOnDamage", {
+    configuration: { get: () => configuration, set: (value) => { configuration = value; } },
+    pendingDetonations: { get: () => pendingDetonations, set: (value) => { pendingDetonations = value; } },
+    thrownProjectiles: { get: () => thrownProjectiles, set: (value) => { thrownProjectiles = value; } },
+}, () => {
+    // processPending's self-reschedule chain closes over this module instance's state. A tools-mode
+    // reload clears callbacks and re-evaluates the module, so the already-scheduled call becomes a
+    // stale closure that keeps ticking against orphaned state instead of the freshly restored one.
+    // onActivate only fires on a real map load, not on reload, so restart the loop here too.
+    timers.setTimeout(processPending, 0);
 });
 
 // Bounce speed loss applied to every grenade type, every bounce. Speed is reduced by a percentage
@@ -456,9 +395,10 @@ Instance.OnGrenadeThrow((event) => {
 const BOUNCE_VELOCITY_PERCENT_LOSS = 0.15; // fraction of speed lost per bounce, e.g. 0.3 = lose 30%
 const BOUNCE_VELOCITY_FLAT_LOSS = 15; // flat units/sec subtracted per bounce, after the percentage loss
 
+//We need to apply a velocity loss because the friction or something is bugged for projectiles so they slide around forever. This is a workaround to make them slow down and eventually stop moving.
 const applyBounceVelocityLoss = (entity: Entity) => {
     const velocity = entity.GetAbsVelocity();
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+    const speed = vectorLength(velocity);
     if (speed <= 0) return;
 
     const newSpeed = Math.max(0, speed * (1 - BOUNCE_VELOCITY_PERCENT_LOSS) - BOUNCE_VELOCITY_FLAT_LOSS);
@@ -479,7 +419,6 @@ const GROUND_TRACE_UP_OFFSET = 4;
 const GROUND_TRACE_DISTANCE = 40;
 
 Instance.OnGrenadeBounce((event) => {
-    Instance.Msg(`Grenade bounce #${event.bounces} for ${event.projectile.GetClassName()}`);
     const tracked = thrownProjectiles.find((p) => p.entity === event.projectile);
     if (!tracked) return;
 
@@ -492,44 +431,13 @@ Instance.OnGrenadeBounce((event) => {
     const traceEnd = { x: position.x, y: position.y, z: position.z - GROUND_TRACE_DISTANCE };
 
     const trace = Instance.TraceLine({ start: traceStart, end: traceEnd, ignoreEntity: event.projectile });
-    Instance.Msg(`Molotov bounce #${event.bounces}: start=${JSON.stringify(traceStart)}, end=${JSON.stringify(traceEnd)}, didHit=${trace.didHit}, fraction=${trace.fraction}, hitPos=${JSON.stringify(trace.end)}`);
     if (!trace.didHit) return;
 
-    detonate({ nadeType: "molotov", projectile: event.projectile, pawn: tracked.pawn, detonateAt: Instance.GetGameTime() });
+    detonate({
+        nadeType: "molotov",
+        projectile: event.projectile,
+        pawn: tracked.pawn,
+        detonateAt: Instance.GetGameTime(),
+        actionTemplateName: tracked.actionTemplateName ?? actionTemplateNameByType.molotov!,
+    });
 });
-
-// Instance.SetNextThink(Instance.GetGameTime());
-
-
-// function createMolotov(weapon)
-// {
-//     //ent_create molotov_projectile {"targetname" "kalle"} (DETTA FUNGERAR och den får targetname!)
-//     const owner = weapon.GetOwner();
-//     if (!owner) return;
-
-//     const controller = owner.GetOriginalPlayerController();
-//     if (!controller) return;
-
-//     const name = Math.floor(Math.random() * 10000) + Instance.GetGameTime();
-//     Instance.ServerCommand(`ent_create molotov_projectile {"targetname" "${name}"}`);
-    
-//     const eyePos = owner.GetEyePosition();
-//     const eyeAng = owner.GetEyeAngles();
-//     const fwd = forwardFromAngles(eyeAng);
-//     const velocity = vecScale(fwd, configuration.projectileSpeed);
-//     // Instance.SetThink(() => {
-
-//     // });
-//     Instance.EntFireAtTarget("kalle", "","",2);
-//     var molotov = Instance.FindEntityByName("kalle");
-//     molotov.Teleport(eyePos, eyeAng, velocity);
-    
-//     // // 2) Spawn the template
-//     // const spawned = template.ForceSpawn(eyePos,eyeAng);
-//     // if (!spawned || spawned.length === 0) return;
-
-//     // // 3) Move the spawned flashbang to the player's eyes
-//     // const flash = spawned[0]; // your template should only spawn one projectile
-
-// }
-

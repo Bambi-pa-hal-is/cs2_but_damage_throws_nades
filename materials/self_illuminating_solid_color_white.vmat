@@ -38,9 +38,37 @@ Layer0
 	g_flSelfIllumScale "1.000"
 	g_vSelfIllumScrollSpeed "[0.000 0.000]"
 	g_vSelfIllumTint "[1.000000 1.000000 1.000000 1.000000]"
-	TextureSelfIllumMask "[1.000000 1.000000 1.000000 0.000000]"
+	TextureSelfIllumMask "[0.094000 0.094000 0.094000 0.000000]"
 
 	//---- Texture Address Mode ----
 	g_nTextureAddressModeU "0" // Wrap
 	g_nTextureAddressModeV "0" // Wrap
+
+
+	VariableState
+	{
+		"Ambient Occlusion"
+		{
+		}
+		"Color"
+		{
+		}
+		"Fog"
+		{
+		}
+		"Lighting"
+		{
+			"Roughness" 0
+			"Metalness" 0
+		}
+		"Normal Map"
+		{
+		}
+		"Self Illum"
+		{
+		}
+		"Texture Address Mode"
+		{
+		}
+	}
 }
