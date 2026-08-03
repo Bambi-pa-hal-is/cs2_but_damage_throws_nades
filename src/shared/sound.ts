@@ -7,4 +7,3 @@ export const playSound = (entityName: string): void => {
         input: "startsound",
     });
 };
-// ent_fire startgame_success_sound startsound

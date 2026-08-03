@@ -3,14 +3,11 @@ import * as mapselect from "./mapselect";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
 import * as configurationweapon from "./configurationweapon";
-import * as throwNadesOnDamage from "./throwNadesOnDamage";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
-import * as testMpShootDroppedGrenades from "./testMpShootDroppedGrenades";
 import * as timers from "../shared/timers";
-import { getGameHasStarted, getMpShootDroppedGrenadesEnabled, onPlayerReset, setGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, onPlayerReset, setGameHasStarted } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
 import { playSound } from "../shared/sound";
-import { printToChat } from "../shared/chat";
 
 // Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
 // needs to react to a player reset gets called from here instead of registering its own.
@@ -23,7 +20,6 @@ Instance.OnActivate(() => {
     Instance.Msg("Script activated!!!");
     mapselect.onActivate();
     startgame.onActivate();
-    throwNadesOnDamage.onActivate();
     teamconfiguration.onActivate();
 });
 
@@ -32,26 +28,11 @@ Instance.OnRoundStart(() => {
     startgame.onRoundStart();
     throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();
-    testMpShootDroppedGrenades.onRoundStart();
     configurationweapon.onRoundStart();
 });
 
 Instance.OnScriptInput("StartGame", () => {
     if (getGameHasStarted()) return;
-
-    if (!getMpShootDroppedGrenadesEnabled()) {
-        playSound("startgame_fail_sound");
-        const message = "mp_shoot_dropped_grenades is not enabled - ask an admin to run: mp_shoot_dropped_grenades 1";
-        Instance.DebugScreenText({
-            text: message,
-            x: 25,
-            y: 25,
-            duration: 15,
-        });
-
-        printToChat(message);
-        return;
-    }
 
     playSound("startgame_success_sound");
     setGameHasStarted(true);

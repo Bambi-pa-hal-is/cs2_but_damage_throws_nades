@@ -16,16 +16,6 @@ let players: CSPlayerController[] = [];
 
 export const getPlayers = (): CSPlayerController[] => players;
 
-// Whether an admin has confirmed mp_shoot_dropped_grenades is enabled server-side, per
-// test_mp_shoot_dropped_grenades.ts. The game shouldn't be allowed to start without it.
-let mpShootDroppedGrenadesEnabled = false;
-
-export const getMpShootDroppedGrenadesEnabled = (): boolean => mpShootDroppedGrenadesEnabled;
-
-export const setMpShootDroppedGrenadesEnabled = (value: boolean): void => {
-    mpShootDroppedGrenadesEnabled = value;
-};
-
 // Rescans every player slot. Call this before reading getPlayers() when you need an up to date
 // list - this also catches players who connected before this script had loaded.
 export const refreshPlayers = (): void => {
@@ -105,7 +95,6 @@ persistOnReload("gamestate", {
     gameHasStarted: { get: () => gameHasStarted, set: (value) => { gameHasStarted = value; } },
     configurationSpawnsEnabled: { get: () => configurationSpawnsEnabled, set: (value) => { configurationSpawnsEnabled = value; } },
     players: { get: () => players, set: (value) => { players = value; } },
-    mpShootDroppedGrenadesEnabled: { get: () => mpShootDroppedGrenadesEnabled, set: (value) => { mpShootDroppedGrenadesEnabled = value; } },
 }, () => {
     // Values are already restored by the time this runs, so this is a no-op unless something is
     // actually out of sync - safe to call, not a resend/inversion of the toggle.
