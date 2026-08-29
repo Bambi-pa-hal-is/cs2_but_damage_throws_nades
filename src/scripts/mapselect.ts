@@ -1,8 +1,9 @@
-import { BaseModelEntity, Instance } from "cs_script/point_script";
+import { Instance } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { getGameHasStarted, CONFIGURATION_SPAWN_NAME } from "../shared/gamestate";
 import { getMainMenuLayout } from "../shared/hud";
 import * as timers from "../shared/timers";
+import * as mapReset from "./mapReset";
 
 const maps = [
     "de_overpass",
@@ -26,21 +27,10 @@ let selectedMap = maps[Math.floor(Math.random() * maps.length)];
 
 export const getSelectedMap = (): string => selectedMap;
 
-// Paints both the legacy in-world glow AND the new HUD's "Selected" card highlight, so either UI
-// stays correct no matter which one (or which script reload path) drove the change.
 const highlightMapButton = (selectedMap: string) => {
     const layout = getMainMenuLayout();
     for (let i = 0; i < maps.length; i++) {
         const map = maps[i];
-        const mapButton = Instance.FindEntityByName(map);
-        if (mapButton instanceof BaseModelEntity) {
-            if (map != selectedMap) {
-                mapButton.Unglow();
-            }
-            else {
-                mapButton.Glow({ r: 0, g: 255, b: 0 });
-            }
-        }
         layout?.SetHasClass(MAP_BUTTON_ID_PREFIX + map, "Selected", map === selectedMap);
     }
 };
@@ -64,23 +54,8 @@ export const onActivate = () => {
     highlightSelectedMap();
 };
 
-// Kept for the legacy in-world map buttons - RunScriptInput passes the button itself as `caller`,
-// whose entity name is the map name.
-Instance.OnScriptInput("SelectMap", (caller) => {
-    const mapName = caller?.caller?.GetEntityName();
-    if (mapName) {
-        selectMap(mapName);
-    }
-});
-
 export const onRoundStart = () => {
-    if (getGameHasStarted()) {
-        //Disable glow when game has started so players cant see the glow when playing.
-        const mapButton = Instance.FindEntityByName(selectedMap);
-        if (mapButton instanceof BaseModelEntity) {
-            mapButton.Unglow();
-        }
-    } else {
+    if (!getGameHasStarted()) {
         highlightSelectedMap();
     }
 };
@@ -107,12 +82,6 @@ const waitForMapToLoad = (onLoaded: () => void) => {
         }
         lastEntityCount = entityCount;
 
-        // DEBUG: remove this DebugScreenText call once loading behaves as expected.
-        Instance.DebugScreenText({
-            text: `waitForMapToLoad: entities=${entityCount} spawnFound=${spawnFound} settle=${settleTimeRemaining.toFixed(1)}s`,
-            x: 25, y: 25, duration: MAP_SPAWN_POLL_INTERVAL * 2, color: { r: 255, g: 255, b: 0 }
-        });
-
         if (spawnFound && settleTimeRemaining <= 0) {
             onLoaded();
             return;
@@ -128,7 +97,13 @@ const waitForMapToLoad = (onLoaded: () => void) => {
 // currently running level instead of switching level entirely, then invokes onLoaded once the map
 // has actually finished loading.
 export const onStartGame = (onLoaded: () => void) => {
+    // EXPERIMENTAL - see mapReset.ts. Safe to delete this one line (and the import above) if that
+    // approach gets abandoned.
+    mapReset.snapshotBaseline();
+
+    Instance.ServerCommand(`sv_cheats 1`);
     Instance.ServerCommand("spawn_group_load " + selectedMap);
+    Instance.ServerCommand(`sv_cheats 0`);
     waitForMapToLoad(onLoaded);
 };
 

@@ -2,14 +2,13 @@ import { Instance } from "cs_script/point_script";
 import * as mapselect from "./mapselect";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
-import * as configurationweapon from "./configurationweapon";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as welcomeHud from "./welcomeHud";
 import * as mainMenu from "./mainMenu";
+import * as rockthevote from "./rockthevote";
 import * as timers from "../shared/timers";
 import { onPlayerReset } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
-import { beginGame } from "./gameflow";
 
 // Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
 // needs to react to a player reset gets called from here instead of registering its own.
@@ -36,7 +35,14 @@ Instance.OnPlayerActivate((event) => {
 // registered per event name, so each module that needs OnPlayerDisconnect gets called from here.
 Instance.OnPlayerDisconnect((event) => {
     teamconfiguration.onPlayerDisconnect(event);
+    rockthevote.onPlayerDisconnect(event);
     mainMenu.refreshInputCapture();
+});
+
+// Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
+// registered per event name, so each module that needs OnPlayerChat gets called from here.
+Instance.OnPlayerChat((event) => {
+    rockthevote.onPlayerChat(event);
 });
 
 // Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
@@ -59,17 +65,12 @@ Instance.OnRoundStart(() => {
     startgame.onRoundStart();
     throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();
-    configurationweapon.onRoundStart();
+    rockthevote.onRoundStart();
     mainMenu.onRoundStart();
 });
 
-// Kept for the legacy in-world "start_button" - routes through the same flow the HUD's start
-// button uses.
-Instance.OnScriptInput("StartGame", () => beginGame(() => {}));
-
 Instance.SetThink(() => {
     timers.think();
-    configurationweapon.think();
     Instance.SetNextThink(Instance.GetGameTime());
 });
 Instance.SetNextThink(Instance.GetGameTime());

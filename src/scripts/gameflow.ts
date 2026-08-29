@@ -19,12 +19,12 @@ export const beginGame = (onStarted: () => void): void => {
         input: "Disable",
     });
     mapselect.onStartGame(() => {
-        startgame.onStartGame();
-        // startgame.onStartGame() issues mp_restartgame 1, which doesn't actually restart the round
-        // until a moment after that - bots get re-evaluated/respawned then, and CS2's bot
-        // team-balancing can silently undo a JoinTeam() call made before that point. Assign teams
-        // after the restart has actually happened, not before it's even been requested.
-        timers.setTimeout(() => teamconfiguration.onStartGame(), 0.1);
-        onStarted();
+        teamconfiguration.onStartGame();
+        // Give the JoinTeam() calls a moment to actually take effect before startgame.onStartGame()
+        // issues mp_restartgame 1 (which is what actually moves players to their new team's spawns).
+        timers.setTimeout(() => {
+            startgame.onStartGame();
+            onStarted();
+        }, 1);
     });
 };

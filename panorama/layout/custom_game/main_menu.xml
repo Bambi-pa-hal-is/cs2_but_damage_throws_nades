@@ -7,11 +7,15 @@
 	<Panel class="MenuRoot" id="main_menu_root">
 		<Panel class="Window">
 			<Panel class="TitleBar">
-				<Label class="Title" text="CS2 BUT DAMAGE THROWS NADES" />
-				<Label class="Subtitle" text="Match Setup" />
+				<Panel class="TitleAccent" />
+				<Panel class="TitleBlock">
+					<Label class="Eyebrow" text="MATCH SETUP" />
+					<Label class="Title" text="CS2 BUT DAMAGE THROWS NADES" />
+				</Panel>
+				<Label class="Credit" text="Map by Bambi p&#229; hal is" />
 			</Panel>
 
-			<Panel class="TabBar">
+			<Panel id="tab_bar" class="TabBar">
 				<Button id="tab_map" class="TabButton Active">
 					<Label text="MAP" />
 				</Button>
@@ -21,68 +25,65 @@
 				<Button id="tab_rules" class="TabButton">
 					<Label text="RULES" />
 				</Button>
+				<Button id="tab_starting" class="TabButton">
+					<Label text="STARTING" />
+				</Button>
 			</Panel>
 
 			<Panel id="panel_map" class="TabPanel">
 				<Panel class="MapGrid">
-					<Panel class="MapRow">
-						<Button id="map_de_ancient" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Ancient" /></Panel>
-						</Button>
-						<Button id="map_de_ancient_night" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient_night.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Ancient Night" /></Panel>
-						</Button>
-						<Button id="map_de_anubis" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_anubis.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Anubis" /></Panel>
-						</Button>
-						<Button id="map_de_cache" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_cache.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Cache" /></Panel>
-						</Button>
-						<Button id="map_de_dust2" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_dust2.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Dust2" /></Panel>
-						</Button>
-					</Panel>
-					<Panel class="MapRow">
-						<Button id="map_de_inferno" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_inferno.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Inferno" /></Panel>
-						</Button>
-						<Button id="map_cs_italy" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_italy.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Italy" /></Panel>
-						</Button>
-						<Button id="map_de_mirage" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_mirage.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Mirage" /></Panel>
-						</Button>
-						<Button id="map_de_nuke" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_nuke.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Nuke" /></Panel>
-						</Button>
-						<Button id="map_cs_office" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_office.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Office" /></Panel>
-						</Button>
-					</Panel>
-					<Panel class="MapRow">
-						<Button id="map_de_overpass" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_overpass.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Overpass" /></Panel>
-						</Button>
-						<Button id="map_de_train" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_train.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Train" /></Panel>
-						</Button>
-						<Button id="map_de_vertigo" class="MapCard">
-							<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_vertigo.jpg" texturewidth="256" textureheight="144" />
-							<Panel class="MapCardFooter"><Label class="MapName" text="Vertigo" /></Panel>
-						</Button>
-					</Panel>
+					<Button id="map_de_ancient" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient" /></Panel>
+					</Button>
+					<Button id="map_de_ancient_night" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient_night.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient Night" /></Panel>
+					</Button>
+					<Button id="map_de_anubis" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_anubis.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Anubis" /></Panel>
+					</Button>
+					<Button id="map_de_cache" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_cache.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Cache" /></Panel>
+					</Button>
+					<Button id="map_de_dust2" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_dust2.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Dust2" /></Panel>
+					</Button>
+					<Button id="map_de_inferno" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_inferno.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Inferno" /></Panel>
+					</Button>
+					<Button id="map_cs_italy" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_italy.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Italy" /></Panel>
+					</Button>
+					<Button id="map_de_mirage" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_mirage.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Mirage" /></Panel>
+					</Button>
+					<Button id="map_de_nuke" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_nuke.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Nuke" /></Panel>
+					</Button>
+					<Button id="map_cs_office" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_office.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Office" /></Panel>
+					</Button>
+					<Button id="map_de_overpass" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_overpass.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Overpass" /></Panel>
+					</Button>
+					<Button id="map_de_train" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_train.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Train" /></Panel>
+					</Button>
+					<Button id="map_de_vertigo" class="MapCard">
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_vertigo.jpg" texturewidth="256" textureheight="144" />
+						<Panel class="MapCardFooter"><Label class="MapName" text="Vertigo" /></Panel>
+					</Button>
 				</Panel>
 			</Panel>
 
@@ -90,42 +91,45 @@
 			<Panel id="panel_teams" class="TabPanel Hidden">
 				<Panel class="TeamColumn CT">
 					<Panel class="TeamHeader">
+						<Panel class="TeamHeaderDot" />
 						<Label class="TeamHeaderLabel" text="COUNTER-TERRORISTS" />
 					</Panel>
 					<Panel class="SlotList">
-						<Panel id="ct_slot_0" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_0" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_1" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_1" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_2" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_2" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_3" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_3" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_4" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_4" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_5" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_5" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_6" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_6" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_7" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_7" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_8" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_8" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
-						<Panel id="ct_slot_9" class="PlayerSlot Empty"><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_9" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_0" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="1" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_0" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_1" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="2" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_1" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_2" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="3" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_2" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_3" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="4" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_3" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_4" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="5" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_4" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_5" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="6" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_5" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_6" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="7" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_6" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_7" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="8" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_7" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_8" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="9" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_8" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
+						<Panel id="ct_slot_9" class="PlayerSlot Empty"><Panel class="SlotIndex"><Label text="10" /></Panel><Label class="PlayerName" text="{s:name}" /><Button id="team_slot_ct_9" class="MoveButton"><Label text="&#8594;" /></Button></Panel>
 					</Panel>
 				</Panel>
 				<Panel class="TeamColumn T">
 					<Panel class="TeamHeader">
+						<Panel class="TeamHeaderDot" />
 						<Label class="TeamHeaderLabel" text="TERRORISTS" />
 					</Panel>
 					<Panel class="SlotList">
-						<Panel id="t_slot_0" class="PlayerSlot Empty"><Button id="team_slot_t_0" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_1" class="PlayerSlot Empty"><Button id="team_slot_t_1" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_2" class="PlayerSlot Empty"><Button id="team_slot_t_2" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_3" class="PlayerSlot Empty"><Button id="team_slot_t_3" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_4" class="PlayerSlot Empty"><Button id="team_slot_t_4" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_5" class="PlayerSlot Empty"><Button id="team_slot_t_5" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_6" class="PlayerSlot Empty"><Button id="team_slot_t_6" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_7" class="PlayerSlot Empty"><Button id="team_slot_t_7" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_8" class="PlayerSlot Empty"><Button id="team_slot_t_8" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
-						<Panel id="t_slot_9" class="PlayerSlot Empty"><Button id="team_slot_t_9" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /></Panel>
+						<Panel id="t_slot_0" class="PlayerSlot Empty"><Button id="team_slot_t_0" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="1" /></Panel></Panel>
+						<Panel id="t_slot_1" class="PlayerSlot Empty"><Button id="team_slot_t_1" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="2" /></Panel></Panel>
+						<Panel id="t_slot_2" class="PlayerSlot Empty"><Button id="team_slot_t_2" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="3" /></Panel></Panel>
+						<Panel id="t_slot_3" class="PlayerSlot Empty"><Button id="team_slot_t_3" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="4" /></Panel></Panel>
+						<Panel id="t_slot_4" class="PlayerSlot Empty"><Button id="team_slot_t_4" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="5" /></Panel></Panel>
+						<Panel id="t_slot_5" class="PlayerSlot Empty"><Button id="team_slot_t_5" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="6" /></Panel></Panel>
+						<Panel id="t_slot_6" class="PlayerSlot Empty"><Button id="team_slot_t_6" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="7" /></Panel></Panel>
+						<Panel id="t_slot_7" class="PlayerSlot Empty"><Button id="team_slot_t_7" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="8" /></Panel></Panel>
+						<Panel id="t_slot_8" class="PlayerSlot Empty"><Button id="team_slot_t_8" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="9" /></Panel></Panel>
+						<Panel id="t_slot_9" class="PlayerSlot Empty"><Button id="team_slot_t_9" class="MoveButton"><Label text="&#8592;" /></Button><Label class="PlayerName" text="{s:name}" /><Panel class="SlotIndex"><Label text="10" /></Panel></Panel>
 					</Panel>
 				</Panel>
 			</Panel>
 
 			<Panel id="panel_rules" class="TabPanel Hidden">
 				<Panel class="RulesColumn">
+					<Label class="SectionEyebrow" text="TRIGGER RULES" />
 					<Panel class="RuleGroup">
 						<Panel class="RuleRow Paired">
 							<Label class="RuleLabel" text="Throw a nade when shooting" />
@@ -154,6 +158,7 @@
 							</Panel>
 						</Panel>
 					</Panel>
+					<Label class="SectionEyebrow Stacked" text="MATCH SETTINGS" />
 					<Panel class="RuleSolo">
 						<Panel class="RuleRow Paired Last">
 							<Label class="RuleLabel" text="Player health" />
@@ -166,6 +171,7 @@
 					</Panel>
 				</Panel>
 				<Panel class="RulesColumn Last">
+					<Label class="SectionEyebrow" text="GRENADE TYPES" />
 					<Panel class="RuleGroup">
 						<Panel class="RuleRow Paired">
 							<Label class="RuleLabel" text="Allow HE" />
@@ -188,6 +194,7 @@
 							<Button id="rule_toggle_decoy" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
 						</Panel>
 					</Panel>
+					<Label class="SectionEyebrow Stacked" text="OTHER" />
 					<Panel class="RuleSolo">
 						<Panel class="RuleRow Paired Last">
 							<Label class="RuleLabel" text="Only random between allowed grenades the player is carrying" />
@@ -197,7 +204,15 @@
 				</Panel>
 			</Panel>
 
-			<Panel class="FooterBar">
+			<Panel id="panel_starting" class="TabPanel CountdownPanel Hidden">
+				<Panel class="CountdownContent">
+					<Label class="CountdownCaption" text="Match starting in..." />
+					<Panel id="countdown_value" class="CountdownNumber"><Label text="{s:value}" /></Panel>
+				</Panel>
+			</Panel>
+
+			<Panel id="footer_bar" class="FooterBar">
+				<Label class="FooterHint" text="Configure the rules, then start when ready." />
 				<Panel class="StartArea">
 					<Panel id="start_spinner" class="Spinner Hidden">
 						<Panel class="SpinnerRing" />

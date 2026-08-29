@@ -1,3 +1,12 @@
+/* ============================================================================
+   Design system
+   - surfaces: void (transparent) < base (window) < raised (cards/rows) < inset (wells)
+   - one accent color (orange) used consistently for interactive/selected states
+   - team colors (CT blue / T tan) used only inside the Teams tab
+   - a repeated "accent bar" motif ties the title, team columns and rule groups
+     together as one visual language instead of unrelated ad-hoc boxes
+   ============================================================================ */
+
 .Root {
 	width: 100%;
 	height: 100%;
@@ -19,76 +28,100 @@
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
-	background-color: #0a0b0dff;
-	border: 1px solid #f5a62355;
-	border-radius: 8px;
+	background-color: #0b0d10ff;
+	border: 1px solid #3da9fc40;
+	border-radius: 14px;
 }
 
+/* --- Title bar --- */
+
 .TitleBar {
-	height: 12%;
-	padding: 14px 28px 0px 28px;
+	width: 100%;
+	height: 11%;
+	padding: 0px 32px;
+	flow-children: right;
+	vertical-align: center;
+	background-color: #ffffff05;
+	border-bottom: 1px solid #ffffff14;
+}
+
+.TitleAccent {
+	width: 4px;
+	height: 44px;
+	vertical-align: center;
+	background-color: #3da9fc;
+	border-radius: 2px;
+}
+
+.TitleBlock {
 	flow-children: down;
-	horizontal-align: center;
-	border-bottom: 1px solid #ffffff18;
+	vertical-align: center;
+	margin-left: 18px;
+}
+
+.Eyebrow {
+	color: #3da9fc;
+	font-size: 13px;
+	letter-spacing: 3px;
+	text-align: left;
 }
 
 .Title {
-	color: #ffffff;
-	font-size: 34px;
-	letter-spacing: 3px;
-	text-align: center;
-	horizontal-align: center;
+	color: #f5f6f7;
+	font-size: 32px;
+	letter-spacing: 2px;
+	text-align: left;
+	margin-top: 2px;
 }
 
-.Subtitle {
-	color: #f5a623;
-	font-size: 16px;
-	letter-spacing: 2px;
-	text-align: center;
-	horizontal-align: center;
-	margin-top: 6px;
+.Credit {
+	color: #b8bcc2;
+	font-size: 18px;
+	letter-spacing: 1px;
+	padding: 8px 16px;
+	background-color: #00000055;
+	border-radius: 999px;
+	horizontal-align: right;
+	vertical-align: center;
 }
 
 /* --- Tab bar --- */
 
 .TabBar {
-	height: 6%;
+	height: 8%;
 	flow-children: right;
-	horizontal-align: center;
-	padding: 8px 20px 0px 20px;
+	vertical-align: center;
+	padding: 10px 32px 0px 32px;
 }
 
 .TabButton {
-	padding: 14px 40px 0px 40px;
-	height: 48px;
-	margin: 0px 4px;
+	height: 36px;
+	padding: 0px 26px;
+	margin-right: 8px;
 	color: #9aa0a6;
-	font-size: 18px;
+	font-size: 14px;
 	letter-spacing: 2px;
 	text-align: center;
-	border-radius: 5px 5px 0px 0px;
-	border-bottom: 3px solid #00000000;
-	background-color: #ffffff00;
-
-	transition-property: color, border-color, background-color;
-	transition-duration: 0.12s;
-
-	&:hover {
-		color: #ffffff;
-		background-color: #ffffff0d;
-	}
+	vertical-align: center;
+	border-radius: 8px;
+	background-color: #ffffff08;
 
 	&.Active {
-		color: #f5a623;
-		background-color: #f5a62318;
-		border-bottom: 3px solid #f5a623;
+		color: #ffffff;
+		background-color: #3da9fc;
 	}
+}
+
+.TabButton Label {
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
 }
 
 .TabPanel {
 	width: 100%;
-	height: 74%;
-	padding: 32px 40px;
+	height: 72%;
+	padding: 12px 32px 28px 32px;
 	flow-children: right;
 
 	&.Hidden {
@@ -96,11 +129,50 @@
 	}
 }
 
+.CountdownPanel {
+	flow-children: down;
+}
+
+.CountdownContent {
+	flow-children: down;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.CountdownCaption {
+	color: #cfd6dc;
+	font-size: 20px;
+	text-align: center;
+	horizontal-align: center;
+}
+
+.CountdownNumber {
+	margin-top: 24px;
+	horizontal-align: center;
+}
+
+.CountdownNumber Label {
+	color: #3da9fc;
+	font-size: 72px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
 .FooterBar {
 	width: 100%;
-	height: 8%;
-	padding: 0px 30px;
-	border-top: 1px solid #ffffff18;
+	height: 9%;
+	padding: 0px 32px;
+	flow-children: right;
+	vertical-align: center;
+	border-top: 1px solid #ffffff14;
+}
+
+.FooterHint {
+	color: #6d747c;
+	font-size: 16px;
+	letter-spacing: 1px;
+	vertical-align: center;
 }
 
 #panel_map {
@@ -111,44 +183,29 @@
 
 .MapGrid {
 	width: 100%;
-	flow-children: down;
-}
-
-/* Panorama has no flex justify-content, so rows are auto-width (shrink to their cards) and
-   centered explicitly - that's what keeps left/right leftover space equal instead of the whole
-   row hugging the left edge. */
-.MapRow {
-	flow-children: right;
-	horizontal-align: center;
+	flow-children: right-wrap;
 }
 
 .MapCard {
-	width: 230px;
-	height: 156px;
-	margin: 0px 16px 16px 0px;
+	width: 18.5%;
+	height: 168px;
+	margin: 0px 1.2% 20px 0px;
 	flow-children: down;
-	background-color: #1c1f24;
-	border: 1px solid #ffffff22;
-	border-radius: 6px;
-
-	transition-property: border-color, background-color;
-	transition-duration: 0.12s;
+	background-color: #14171cff;
+	border: 1px solid #ffffff1a;
+	border-radius: 10px;
+	box-shadow: 0px 6px 14px 0px #00000055;
 
 	&.Selected {
-		border-color: #f5a623;
-		background-color: #2a2410;
+		border-color: #3da9fc;
+		background-color: #12222bff;
 	}
-}
-
-.MapCard:hover {
-	border-color: #f5a623;
-	background-color: #3a2f18;
-	cursor: pointer;
 }
 
 .MapThumb {
 	width: 100%;
-	height: 104px;
+	height: 120px;
+	border-radius: 9px 9px 0px 0px;
 }
 
 .MapCardFooter {
@@ -156,19 +213,21 @@
 	height: 48px;
 	horizontal-align: center;
 	vertical-align: center;
-	background-color: #00000066;
+	background-color: #00000070;
+	border-radius: 0px 0px 9px 9px;
 }
 
 .MapName {
 	color: #e8e8e8;
-	font-size: 18px;
+	font-size: 17px;
+	letter-spacing: 1px;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
 }
 
 .MapCard.Selected .MapCardFooter {
-	background-color: #f5a62333;
+	background-color: #3da9fc33;
 }
 
 /* --- Teams panel --- */
@@ -177,34 +236,50 @@
 	width: 48%;
 	height: 100%;
 	flow-children: down;
-	background-color: #ffffff08;
-	border-radius: 6px;
-	padding: 20px;
+	background-color: #ffffff06;
+	border: 1px solid #ffffff10;
+	border-radius: 10px;
+	padding: 18px;
 	margin-right: 4%;
 
 	&.CT {
-		border-top: 3px solid #6fa3d8;
-		background-color: #6fa3d812;
+		border-top: 4px solid #5b9bd5;
+		background-color: #5b9bd50f;
 	}
 
 	&.T {
-		border-top: 3px solid #d1a054;
-		background-color: #d1a05412;
+		border-top: 4px solid #d1a054;
+		background-color: #d1a0540f;
 		margin-right: 0px;
 	}
 }
 
 .TeamHeader {
-	height: 40px;
+	height: 24px;
+	flow-children: right;
 	horizontal-align: center;
+	vertical-align: center;
+}
+
+.TeamHeaderDot {
+	width: 8px;
+	height: 8px;
+	vertical-align: center;
+	border-radius: 50%;
+	background-color: #5b9bd5;
+	margin-right: 10px;
+}
+
+.TeamColumn.T .TeamHeaderDot {
+	background-color: #d1a054;
 }
 
 .TeamHeaderLabel {
 	color: #cfd6dc;
-	font-size: 18px;
-	letter-spacing: 2px;
+	font-size: 17px;
+	letter-spacing: 3px;
 	text-align: center;
-	horizontal-align: center;
+	vertical-align: center;
 }
 
 .SlotList {
@@ -215,20 +290,20 @@
 
 .PlayerSlot {
 	width: 100%;
-	height: 40px;
-	margin-bottom: 8px;
-	padding: 0px 14px;
+	height: 38px;
+	margin-bottom: 6px;
+	padding: 0px 12px;
 	flow-children: right;
 	vertical-align: center;
-	background-color: #ffffff1F;
-	border-radius: 4px;
+	background-color: #ffffff0d;
+	border-radius: 6px;
 	opacity: 1;
 
 	transition-property: opacity;
 	transition-duration: 0.12s;
 
 	&.Empty {
-		opacity: 0.3;
+		opacity: 0.35;
 	}
 }
 
@@ -236,28 +311,47 @@
 	visibility: collapse;
 }
 
+.SlotIndex {
+	width: 22px;
+	height: 22px;
+	vertical-align: center;
+	background-color: #ffffff10;
+	border-radius: 50%;
+}
+
+.SlotIndex Label {
+	width: 100%;
+	height: 100%;
+	color: #7d848c;
+	font-size: 11px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.TeamColumn.CT .SlotIndex {
+	margin-right: 10px;
+}
+
+.TeamColumn.T .SlotIndex {
+	margin-left: 10px;
+	horizontal-align: right;
+}
+
 .PlayerName {
-	width: 80%;
+	width: 70%;
 	color: #eef1f3;
-	font-size: 17px;
+	font-size: 16px;
 	vertical-align: center;
 }
 
 .MoveButton {
-	width: 40px;
-	height: 36px;
+	width: 38px;
+	height: 34px;
 	vertical-align: center;
-	background-color: #f5a62340;
-	border: 1px solid #f5a623aa;
-	border-radius: 4px;
-
-	transition-property: background-color, border-color;
-	transition-duration: 0.12s;
-
-	&:hover {
-		background-color: #f5a62365;
-		border-color: #f5a623;
-	}
+	background-color: #3da9fc40;
+	border: 1px solid #3da9fcaa;
+	border-radius: 6px;
 }
 
 .TeamColumn.CT .MoveButton {
@@ -271,15 +365,11 @@
 }
 
 .MoveButton Label {
-	color: #f5a623;
+	color: #3da9fc;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
-	font-size: 18px;
-}
-
-.MoveButton Label:hover {
-	cursor: pointer;
+	font-size: 17px;
 }
 
 /* --- Rules panel --- */
@@ -295,32 +385,45 @@
 	}
 }
 
+.SectionEyebrow {
+	color: #3da9fc;
+	font-size: 12px;
+	letter-spacing: 3px;
+	margin-bottom: 10px;
+}
+
+.SectionEyebrow.Stacked {
+	margin-top: 22px;
+}
+
 .RuleSolo {
 	width: 98%;
 	flow-children: down;
 	margin-bottom: 18px;
-	background-color: #ffffff05;
-	border: 1px solid #ffffff10;
-	border-radius: 4px;
+	background-color: #ffffff06;
+	border: 1px solid #ffffff12;
+	border-left: 3px solid #3da9fc99;
+	border-radius: 6px;
 }
 
 .RuleGroup {
 	width: 98%;
 	flow-children: down;
 	margin-bottom: 18px;
-	background-color: #ffffff05;
-	border: 1px solid #ffffff10;
-	border-radius: 4px;
+	background-color: #ffffff06;
+	border: 1px solid #ffffff12;
+	border-left: 3px solid #3da9fc99;
+	border-radius: 6px;
 }
 
 .RuleRow {
 	width: 100%;
-	height: 56px;
+	height: 54px;
 	margin-bottom: 10px;
-	padding: 0px 8px;
+	padding: 0px 14px;
 	flow-children: right;
 	vertical-align: center;
-	background-color: #ffffff06;
+	background-color: #ffffff00;
 	border-radius: 4px;
 
 	&.Paired {
@@ -336,25 +439,18 @@
 .RuleLabel {
 	width: 70%;
 	color: #dfe3e6;
-	font-size: 17px;
+	font-size: 16px;
 	vertical-align: center;
 }
 
 .Checkbox {
-	width: 34px;
-	height: 34px;
+	width: 32px;
+	height: 32px;
 	horizontal-align: right;
 	vertical-align: center;
-	background-color: #ffffff10;
-	border: 1px solid #ffffff44;
-	border-radius: 5px;
-
-	transition-property: background-color, border-color;
-	transition-duration: 0.12s;
-
-	&:hover {
-		border-color: #f5a62399;
-	}
+	background-color: #ffffff0d;
+	border: 1px solid #ffffff3a;
+	border-radius: 6px;
 
 	&.Checked {
 		background-color: #21361f;
@@ -366,14 +462,11 @@
 	width: 100%;
 	height: 100%;
 	color: #6fce6a;
-	font-size: 22px;
+	font-size: 20px;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
 	opacity: 0;
-
-	transition-property: opacity;
-	transition-duration: 0.1s;
 }
 
 .Checkbox.Checked .CheckMark {
@@ -381,44 +474,43 @@
 }
 
 .Stepper {
-	height: 34px;
+	height: 32px;
 	horizontal-align: right;
 	vertical-align: center;
 	flow-children: right;
 }
 
 .StepButton {
-	width: 34px;
-	height: 34px;
-	background-color: #ffffff18;
-	border-radius: 4px;
-
-	transition-property: background-color;
-	transition-duration: 0.12s;
-
-	&:hover {
-		background-color: #ffffff35;
-	}
+	width: 32px;
+	height: 32px;
+	color: #ffffff;
+	background-color: #ffffff10;
+	border-radius: 6px;
 }
 
 .StepButton Label {
+	width: 100%;
+	height: 100%;
 	color: #ffffff;
-	font-size: 19px;
+	font-size: 18px;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
 }
 
 .StepValue {
-	width: 96px;
-	height: 34px;
+	width: 92px;
+	height: 32px;
+	margin: 0px 6px;
 	horizontal-align: center;
 	vertical-align: center;
+	background-color: #ffffff08;
+	border-radius: 6px;
 }
 
 .StepValue Label {
-	color: #f5a623;
-	font-size: 18px;
+	color: #3da9fc;
+	font-size: 17px;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
@@ -427,8 +519,8 @@
 /* --- Start button / spinner --- */
 
 .StartArea {
-	width: 240px;
-	height: 76%;
+	width: 220px;
+	height: 70%;
 	horizontal-align: right;
 	vertical-align: center;
 }
@@ -438,24 +530,17 @@
 	height: 100%;
 	horizontal-align: center;
 	vertical-align: center;
-	background-color: #f5a623;
+	background-color: #3da9fc;
 	border-radius: 8px;
 
-	transition-property: background-color;
-	transition-duration: 0.12s;
-
-	&:hover {
-		background-color: #ffb84d;
-	}
-
 	&.Disabled {
-		background-color: #5a4a2a;
+		background-color: #2b3540;
 	}
 }
 
 .StartLabel {
-	color: #101215;
-	font-size: 24px;
+	color: #ffffff;
+	font-size: 20px;
 	letter-spacing: 2px;
 	text-align: center;
 	horizontal-align: center;
@@ -470,7 +555,7 @@
 	flow-children: down;
 	background-color: #101215ee;
 	border-radius: 8px;
-	border: 1px solid #f5a62355;
+	border: 1px solid #3da9fc55;
 
 	&.Hidden {
 		visibility: collapse;
@@ -478,12 +563,12 @@
 }
 
 .SpinnerRing {
-	width: 32px;
-	height: 32px;
-	margin-top: 12px;
+	width: 28px;
+	height: 28px;
+	margin-top: 10px;
 	horizontal-align: center;
 	border-radius: 50%;
-	border-top: 4px solid #f5a623;
+	border-top: 4px solid #3da9fc;
 	border-right: 4px solid #ffffff33;
 	border-bottom: 4px solid #ffffff33;
 	border-left: 4px solid #ffffff33;
@@ -491,7 +576,7 @@
 
 .SpinnerLabel {
 	color: #cfd6dc;
-	font-size: 12px;
+	font-size: 11px;
 	letter-spacing: 2px;
 	text-align: center;
 	horizontal-align: center;
