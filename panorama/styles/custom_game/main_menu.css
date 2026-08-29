@@ -14,19 +14,19 @@
 }
 
 .Window {
-	width: 92%;
-	height: 90%;
+	width: 100%;
+	height: 100%;
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
-	background-color: #101215f2;
+	background-color: #0a0b0dff;
 	border: 1px solid #f5a62355;
 	border-radius: 8px;
 }
 
 .TitleBar {
-	height: 9%;
-	padding: 18px 28px 0px 28px;
+	height: 12%;
+	padding: 14px 28px 0px 28px;
 	flow-children: down;
 	horizontal-align: center;
 	border-bottom: 1px solid #ffffff18;
@@ -87,7 +87,7 @@
 
 .TabPanel {
 	width: 100%;
-	height: 77%;
+	height: 74%;
 	padding: 32px 40px;
 	flow-children: right;
 
@@ -134,14 +134,16 @@
 	transition-property: border-color, background-color;
 	transition-duration: 0.12s;
 
-	&:hover {
-		border-color: #f5a62399;
-	}
-
 	&.Selected {
 		border-color: #f5a623;
 		background-color: #2a2410;
 	}
+}
+
+.MapCard:hover {
+	border-color: #f5a623;
+	background-color: #3a2f18;
+	cursor: pointer;
 }
 
 .MapThumb {
@@ -230,6 +232,10 @@
 	}
 }
 
+.PlayerSlot.Empty .MoveButton {
+	visibility: collapse;
+}
+
 .PlayerName {
 	width: 80%;
 	color: #eef1f3;
@@ -240,17 +246,28 @@
 .MoveButton {
 	width: 40px;
 	height: 36px;
-	horizontal-align: center;
 	vertical-align: center;
-	background-color: #ffffff18;
+	background-color: #f5a62340;
+	border: 1px solid #f5a623aa;
 	border-radius: 4px;
 
-	transition-property: background-color;
+	transition-property: background-color, border-color;
 	transition-duration: 0.12s;
 
 	&:hover {
-		background-color: #ffffff35;
+		background-color: #f5a62365;
+		border-color: #f5a623;
 	}
+}
+
+.TeamColumn.CT .MoveButton {
+	horizontal-align: right;
+	margin-left: 10px;
+}
+
+.TeamColumn.T .MoveButton {
+	horizontal-align: left;
+	margin-right: 10px;
 }
 
 .MoveButton Label {
@@ -278,6 +295,24 @@
 	}
 }
 
+.RuleSolo {
+	width: 98%;
+	flow-children: down;
+	margin-bottom: 18px;
+	background-color: #ffffff05;
+	border: 1px solid #ffffff10;
+	border-radius: 4px;
+}
+
+.RuleGroup {
+	width: 98%;
+	flow-children: down;
+	margin-bottom: 18px;
+	background-color: #ffffff05;
+	border: 1px solid #ffffff10;
+	border-radius: 4px;
+}
+
 .RuleRow {
 	width: 100%;
 	height: 56px;
@@ -287,6 +322,15 @@
 	vertical-align: center;
 	background-color: #ffffff06;
 	border-radius: 4px;
+
+	&.Paired {
+		margin-bottom: 2px;
+		background-color: #ffffff00;
+
+		&.Last {
+			margin-bottom: 0px;
+		}
+	}
 }
 
 .RuleLabel {
@@ -321,7 +365,11 @@
 .CheckMark {
 	width: 100%;
 	height: 100%;
-	background-color: #6fce6a;
+	color: #6fce6a;
+	font-size: 22px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
 	opacity: 0;
 
 	transition-property: opacity;

@@ -7,7 +7,7 @@
 	<Panel class="MenuRoot" id="main_menu_root">
 		<Panel class="Window">
 			<Panel class="TitleBar">
-				<Label class="Title" text="BUT DAMAGE THROWS NADES" />
+				<Label class="Title" text="CS2 BUT DAMAGE THROWS NADES" />
 				<Label class="Subtitle" text="Match Setup" />
 			</Panel>
 
@@ -126,63 +126,73 @@
 
 			<Panel id="panel_rules" class="TabPanel Hidden">
 				<Panel class="RulesColumn">
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Throw a nade when shooting" />
-						<Button id="rule_toggle_throw_on_shoot" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Chance to throw when shooting" />
-						<Panel class="Stepper">
-							<Button id="rule_shoot_chance_dec" class="StepButton"><Label text="-" /></Button>
-							<Panel id="rule_shoot_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
-							<Button id="rule_shoot_chance_inc" class="StepButton"><Label text="+" /></Button>
+					<Panel class="RuleGroup">
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Throw a nade when shooting" />
+							<Button id="rule_toggle_throw_on_shoot" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired Last">
+							<Label class="RuleLabel" text="Chance to throw when shooting" />
+							<Panel class="Stepper">
+								<Button id="rule_shoot_chance_dec" class="StepButton"><Label text="-" /></Button>
+								<Panel id="rule_shoot_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
+								<Button id="rule_shoot_chance_inc" class="StepButton"><Label text="+" /></Button>
+							</Panel>
 						</Panel>
 					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Throw a nade when dealing damage" />
-						<Button id="rule_toggle_throw_on_damage" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Chance to throw when dealing damage" />
-						<Panel class="Stepper">
-							<Button id="rule_damage_chance_dec" class="StepButton"><Label text="-" /></Button>
-							<Panel id="rule_damage_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
-							<Button id="rule_damage_chance_inc" class="StepButton"><Label text="+" /></Button>
+					<Panel class="RuleGroup">
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Throw a nade when dealing damage" />
+							<Button id="rule_toggle_throw_on_damage" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired Last">
+							<Label class="RuleLabel" text="Chance to throw when dealing damage" />
+							<Panel class="Stepper">
+								<Button id="rule_damage_chance_dec" class="StepButton"><Label text="-" /></Button>
+								<Panel id="rule_damage_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
+								<Button id="rule_damage_chance_inc" class="StepButton"><Label text="+" /></Button>
+							</Panel>
 						</Panel>
 					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Player health" />
-						<Panel class="Stepper">
-							<Button id="rule_health_dec" class="StepButton"><Label text="-" /></Button>
-							<Panel id="rule_health_value" class="StepValue"><Label text="{s:value}" /></Panel>
-							<Button id="rule_health_inc" class="StepButton"><Label text="+" /></Button>
+					<Panel class="RuleSolo">
+						<Panel class="RuleRow Paired Last">
+							<Label class="RuleLabel" text="Player health" />
+							<Panel class="Stepper">
+								<Button id="rule_health_dec" class="StepButton"><Label text="-" /></Button>
+								<Panel id="rule_health_value" class="StepValue"><Label text="{s:value}" /></Panel>
+								<Button id="rule_health_inc" class="StepButton"><Label text="+" /></Button>
+							</Panel>
 						</Panel>
 					</Panel>
 				</Panel>
 				<Panel class="RulesColumn Last">
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Only random equipped nades" />
-						<Button id="rule_toggle_only_equipped" class="Checkbox"><Panel class="CheckMark" /></Button>
+					<Panel class="RuleGroup">
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Allow HE" />
+							<Button id="rule_toggle_he" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Allow Flashbang" />
+							<Button id="rule_toggle_flashbang" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Allow Smoke" />
+							<Button id="rule_toggle_smoke" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired">
+							<Label class="RuleLabel" text="Allow Molotov / Incendiary" />
+							<Button id="rule_toggle_molotov" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
+						<Panel class="RuleRow Paired Last">
+							<Label class="RuleLabel" text="Allow Decoy" />
+							<Button id="rule_toggle_decoy" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
 					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Allow HE" />
-						<Button id="rule_toggle_he" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Allow Flashbang" />
-						<Button id="rule_toggle_flashbang" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Allow Smoke" />
-						<Button id="rule_toggle_smoke" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Allow Molotov / Incendiary" />
-						<Button id="rule_toggle_molotov" class="Checkbox"><Panel class="CheckMark" /></Button>
-					</Panel>
-					<Panel class="RuleRow">
-						<Label class="RuleLabel" text="Allow Decoy" />
-						<Button id="rule_toggle_decoy" class="Checkbox"><Panel class="CheckMark" /></Button>
+					<Panel class="RuleSolo">
+						<Panel class="RuleRow Paired Last">
+							<Label class="RuleLabel" text="Only random between allowed grenades the player is carrying" />
+							<Button id="rule_toggle_only_equipped" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
+						</Panel>
 					</Panel>
 				</Panel>
 			</Panel>
