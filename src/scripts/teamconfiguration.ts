@@ -1,14 +1,13 @@
-import { CSPlayerController, Instance, Entity, type Vector } from "cs_script/point_script";
+import { CSPlayerController, Instance } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
-import { setEntityMessage } from "../shared/ui";
-import { getPlayers, refreshPlayers, setGameHasStarted } from "../shared/gamestate";
+import { getMainMenuLayout } from "../shared/hud";
+import { getPlayers, refreshPlayers, getGameHasStarted } from "../shared/gamestate";
 import { CT_TEAM, T_TEAM } from "../shared/teams";
-import { forceSpawnTemplate } from "../shared/spawn";
 import * as timers from "../shared/timers";
 
-const buttonOffset = 25;
-const playerButtonNamePrefix = "test_player_button_";
-const playerButtonTextNamePrefix = "test_player_button_text_";
+// The Teams panel is a fixed-size HUD layout (no dynamic child panels), so only this many players
+// per side can get a visible slot. Comfortably above any realistic lobby size for this map.
+const MAX_SLOTS_PER_TEAM = 10;
 
 interface Player {
     id: number;
@@ -16,13 +15,7 @@ interface Player {
     name: string;
     currentTeam: number;
     teamToJoinWhenGameStart: number;
-    playerButton: PlayerButton;
     playerController: CSPlayerController;
-}
-
-interface PlayerButton {
-    buttonName: string;
-    buttonTextName: string;
 }
 
 interface Configuration {
@@ -33,8 +26,21 @@ let configuration: Configuration = {
     players: [],
 };
 
+// Which player currently occupies each HUD slot - rebuilt every renderHud() call, and used to map
+// a clicked "team_slot_ct_<n>" / "team_slot_t_<n>" button id back to a player.
+let ctSlotPlayerIds: (number | undefined)[] = new Array(MAX_SLOTS_PER_TEAM).fill(undefined);
+let tSlotPlayerIds: (number | undefined)[] = new Array(MAX_SLOTS_PER_TEAM).fill(undefined);
+
 const findById = (id: number): Player | undefined => configuration.players.find((player) => player.id === id);
-const findByButtonName = (button: string): Player | undefined => configuration.players.find((player) => player.playerButton.buttonName === button);
+
+// Puts real (non-bot) players on CT immediately on connect, before they'd otherwise see CS2's own
+// team-select screen - matches the lobby, whose only enabled spawns are CT ones.
+const autoAssignToCt = (controller: CSPlayerController): void => {
+    if (getGameHasStarted() || controller.IsBot()) return;
+    if (controller.GetTeamNumber() !== CT_TEAM) {
+        controller.JoinTeam(CT_TEAM);
+    }
+};
 
 const upsertFromController = (controller: CSPlayerController): Player => {
     const id = controller.GetPlayerSlot();
@@ -51,7 +57,6 @@ const upsertFromController = (controller: CSPlayerController): Player => {
             currentTeam: team,
             playerController: controller,
             teamToJoinWhenGameStart: configuration.players.length % 2 === 0 ? CT_TEAM : T_TEAM,
-            playerButton: createPlayerButton({ position: { x: -15792, y: -14912, z: -15759 }, id: id.toString() }),
         };
         configuration.players.push(player);
         return player;
@@ -68,69 +73,46 @@ const removeById = (id: number): void => {
     if (index === -1) {
         return;
     }
-
-    const [removed] = configuration.players.splice(index, 1);
-    killPlayerButton(removed.playerButton);
+    configuration.players.splice(index, 1);
 };
 
-const updateUi = (): void => {
-    const ctAnchor = Instance.FindEntityByName("ct_players");
-    const tAnchor = Instance.FindEntityByName("t_players");
+const renderColumn = (players: Player[], slotIds: (number | undefined)[], prefix: "ct" | "t"): void => {
+    const layout = getMainMenuLayout();
+    if (!layout) return;
 
-    if (!ctAnchor || !tAnchor) {
-        Instance.Msg("Cannot find ct or t anchors");
-        return;
+    for (let i = 0; i < MAX_SLOTS_PER_TEAM; i++) {
+        const player = players[i];
+        slotIds[i] = player?.id;
+
+        const slotPanelId = `${prefix}_slot_${i}`;
+        layout.SetHasClass(slotPanelId, "Empty", !player);
+        // A slot that just lost its player still needs its dialog variable cleared - otherwise the
+        // stale name lingers (just dimmed via .Empty) instead of disappearing.
+        layout.SetDialogVariableString(slotPanelId, "name", player ? (player.isBot ? "BOT " : "") + player.name : "");
     }
+};
 
-    let tOffset = 0;
-    let ctOffset = 0;
-    // Only schedule one retry per updateUi() call, no matter how many players are missing a button -
-    // scheduling one per missing player made this schedule N new calls to itself every pass, each of
-    // which would do the same, growing exponentially instead of just retrying once per tick.
-    let needsRetry = false;
+// Repaints the Teams HUD panel from `configuration`. Safe to call any time - slot assignment is
+// recomputed from scratch every time, so it self-heals after connects/disconnects/reorders.
+export const renderHud = (): void => {
+    const ctPlayers = configuration.players.filter((player) => player.teamToJoinWhenGameStart === CT_TEAM);
+    const tPlayers = configuration.players.filter((player) => player.teamToJoinWhenGameStart === T_TEAM);
 
-    for (let i = 0; i < configuration.players.length; i++) {
-        const player = configuration.players[i];
-        const playerButton = Instance.FindEntityByName(player.playerButton.buttonName);
-        const playerButtonText = Instance.FindEntityByName(player.playerButton.buttonTextName);
-        if (!playerButton || !playerButtonText) {
-            Instance.Msg(`Cannot find button or button text for player ${player.playerButton.buttonName}`);
-            createPlayerButton({ position: { x: -0, y: -0, z: -0 }, id: player.id.toString() }); //If button for is missing (for some reason my own player never gets a button), recreate and re render UI next think
-            needsRetry = true;
-            continue;
-        }
+    renderColumn(ctPlayers, ctSlotPlayerIds, "ct");
+    renderColumn(tPlayers, tSlotPlayerIds, "t");
+};
 
-        const anchor: Entity = (player.teamToJoinWhenGameStart === CT_TEAM ? ctAnchor : tAnchor)!;
-        if (anchor === tAnchor) {
-            tOffset -= buttonOffset;
-        } else {
-            ctOffset -= buttonOffset;
-        }
-        const base = anchor.GetAbsOrigin();
-        playerButton.Teleport({
-            position: {
-                x: base.x,
-                y: base.y,
-                z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-            }
-        });
+// Called by mainMenu.ts when the host (playerController[0]) clicks a slot's move button.
+export const handleSlotClick = (team: "ct" | "t", index: number): void => {
+    const slotIds = team === "ct" ? ctSlotPlayerIds : tSlotPlayerIds;
+    const playerId = slotIds[index];
+    if (playerId === undefined) return;
 
-        const namePrefix = player.isBot ? "BOT " : "";
+    const player = findById(playerId);
+    if (!player) return;
 
-        playerButtonText.Teleport({
-            position: {
-                x: base.x,
-                y: base.y,
-                z: base.z + (anchor === ctAnchor ? ctOffset : tOffset),
-            }
-        });
-
-        setEntityMessage(playerButtonText, `${namePrefix}${player.name}`);
-    }
-
-    if (needsRetry) {
-        timers.setTimeout(updateUi, 0);
-    }
+    player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === CT_TEAM ? T_TEAM : CT_TEAM;
+    renderHud();
 };
 
 const updatePlayerTeams = (): void => {
@@ -151,41 +133,47 @@ const updatePlayerTeams = (): void => {
     }
 };
 
-Instance.OnPlayerConnect((event) => {
+// Exported instead of self-registered - index.ts owns the shared OnPlayerConnect dispatch.
+export const onPlayerConnect = (event: { player: CSPlayerController }) => {
     const playerController = event?.player;
     if (!playerController?.IsValid?.()) {
         return;
     }
 
+    autoAssignToCt(playerController);
     upsertFromController(playerController);
-    timers.setTimeout(updateUi, 0);
-});
+    renderHud();
+};
 
 export const onRoundStart = () => {
     timers.setTimeout(() => {
         syncPlayersFromGameState();
-        timers.setTimeout(updateUi, 0);
+        renderHud();
     }, 0);
 };
 
-Instance.OnPlayerActivate((event) => {
+// Exported instead of self-registered via Instance.OnPlayerActivate - only one callback can be
+// registered per event name, and index.ts already owns the shared OnPlayerActivate dispatch.
+export const onPlayerActivate = (event: { player: CSPlayerController }) => {
     const playerController = event?.player;
     if (!playerController?.IsValid?.()) {
         return;
     }
 
+    autoAssignToCt(playerController);
     upsertFromController(playerController);
-    timers.setTimeout(updateUi, 0);
-});
+    renderHud();
+};
 
-Instance.OnPlayerDisconnect((event) => {
+// Exported instead of self-registered - index.ts owns the shared OnPlayerDisconnect dispatch.
+export const onPlayerDisconnect = (event: { playerSlot: number }) => {
     if (typeof event?.playerSlot !== "number") {
         return;
     }
 
     removeById(event.playerSlot);
-    timers.setTimeout(updateUi, 0);
-});
+    renderHud();
+};
 
 const syncPlayersFromGameState = (): void => {
     refreshPlayers();
@@ -197,30 +185,9 @@ const syncPlayersFromGameState = (): void => {
 export const onActivate = () => {
     timers.setTimeout(() => {
         syncPlayersFromGameState();
-        timers.setTimeout(updateUi, 0);
+        renderHud();
     }, 0);
 };
-
-Instance.OnScriptInput("TogglePlayerTeam", (event) => {
-    const buttonEntity = event.caller;
-    if (!buttonEntity) {
-        Instance.Msg(`Cannot identify button entity from caller`);
-        return;
-    }
-
-    const player = findByButtonName(buttonEntity.GetEntityName());
-    if (!player) {
-        Instance.Msg(`Cannot find player associated with button entity`);
-        return;
-    }
-
-    player.teamToJoinWhenGameStart = player.teamToJoinWhenGameStart === CT_TEAM ? T_TEAM : CT_TEAM;
-    killPlayerButton(player.playerButton); //Moving buttons that have been pressed results in a button that slowly slides away for some reason so we just destroy and recreate it.
-    timers.setTimeout(() => {
-        player.playerButton = createPlayerButton({ position: { x: -0, y: -0, z: -0 }, id: player.id.toString() });
-        timers.setTimeout(updateUi, 0);
-    }, 0);
-});
 
 export const onStartGame = () => {
     updatePlayerTeams();
@@ -230,38 +197,5 @@ persistOnReload("teamconfiguration", {
     configuration: { get: () => configuration, set: (value) => { configuration = value; } },
 }, () => {
     syncPlayersFromGameState();
-    timers.setTimeout(updateUi, 0);
+    renderHud();
 });
-
-const killPlayerButton = (playerButton: PlayerButton) => {
-    Instance.EntFireAtName({
-        name: playerButton.buttonName,
-        input: "kill",
-    });
-    Instance.EntFireAtName({
-        name: playerButton.buttonTextName,
-        input: "kill",
-    });
-};
-
-// Always returns valid (deterministic) names, even if the actual spawn below fails - updateUi()
-// already retries FindEntityByName every think until a button by that name actually exists, so
-// there's no need for a null/PlayerButton|null result here.
-const createPlayerButton = (data: { position: Vector, id: string }): PlayerButton => {
-    const buttonName = playerButtonNamePrefix + data.id;
-    const buttonTextName = playerButtonTextNamePrefix + data.id;
-
-    const spawned = forceSpawnTemplate("player_button_point_template", data.position);
-    if (spawned && spawned.length >= 2) {
-        const [button, buttonText] = spawned;
-
-        button.Teleport({ position: data.position });
-        buttonText.Teleport({ position: data.position });
-
-        setEntityMessage(buttonText, "New text");
-        button.SetEntityName(buttonName);
-        buttonText.SetEntityName(buttonTextName);
-    }
-
-    return { buttonName, buttonTextName };
-};

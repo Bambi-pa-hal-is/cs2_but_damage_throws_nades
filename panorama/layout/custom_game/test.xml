@@ -1,0 +1,17 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/test.css" />
+	</styles>
+
+
+
+	<Panel class="Root">
+		<Panel id="dialog" class="Dismissed">
+			<Label class="Body" text="Welcome to but_damage_throws_nades!!!" />
+			<Button id="dismiss_button">
+				<Label text="Dismiss" />
+			</Button>
+		</Panel>
+		<Image src="data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAABqklEQVR4nOzTr00dABRH4b7mmU5Q1aRtKp6vaNI0rekOSFAoBB5BggVGeAImYAE8hD8JCBiBsABBMgLq5pjvG+B3xcldnmyef5h08fthdP/HwZfR/fXP/dH9j6PrvEuAmAAxAWICxASICRATICZATICYADEBYgLEBIgJEBMgJkBMgJgAMQFiAsQEiAkQEyAmQEyAmAAxAWICxASICRBb7q5uRw9c7f0f3X/9/Hd0/+vW3ei+D4gJEBMgJkBMgJgAMQFiAsQEiAkQEyAmQEyAmAAxAWICxASICRATICZATICYADEBYgLEBIgJEBMgJkBMgJgAMQFii42n76MHXv4cju6vd85G959//Rvd9wExAWICxASICRATICZATICYADEBYgLEBIgJEBMgJkBMgJgAMQFiAsQEiAkQEyAmQEyAmAAxAWICxASICRATICZAbPHp2/Hogfvr1ej+zeXp6P7R9uPovg+ICRATICZATICYADEBYgLEBIgJEBMgJkBMgJgAMQFiAsQEiAkQEyAmQEyAmAAxAWICxASICRATICZATICYADEBYm8BAAD//5s0GOsRBtsCAAAAAElFTkSuQmCC"/>
+	</Panel>
+</root>

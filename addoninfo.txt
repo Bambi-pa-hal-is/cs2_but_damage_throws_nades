@@ -9,4 +9,11 @@
     gamemodes = [ ]
     custom_cfg = "maps/de_nuke.cfg"
     map_extentions = null
+
+    // Strict Workshop-friendly Panorama path.
+    Panorama
+    {
+        AllowCustomGameUI = true
+        AddonLayoutPath = "panorama/layout/custom_game/"
+    }
 }

@@ -4,10 +4,12 @@ import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
 import * as configurationweapon from "./configurationweapon";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
+import * as welcomeHud from "./welcomeHud";
+import * as mainMenu from "./mainMenu";
 import * as timers from "../shared/timers";
-import { getGameHasStarted, onPlayerReset, setGameHasStarted } from "../shared/gamestate";
+import { onPlayerReset } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
-import { playSound } from "../shared/sound";
+import { beginGame } from "./gameflow";
 
 // Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
 // needs to react to a player reset gets called from here instead of registering its own.
@@ -16,11 +18,40 @@ Instance.OnPlayerReset((event) => {
     applyHealthToPlayer(event.player);
 });
 
+// Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
+// registered per event name, so each module that needs OnPlayerConnect gets called from here.
+Instance.OnPlayerConnect((event) => {
+    teamconfiguration.onPlayerConnect(event);
+});
+
+// Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
+// registered per event name, so each module that needs OnPlayerActivate gets called from here.
+Instance.OnPlayerActivate((event) => {
+    teamconfiguration.onPlayerActivate(event);
+    welcomeHud.onPlayerActivate(event);
+    mainMenu.onPlayerActivate(event);
+});
+
+// Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
+// registered per event name, so each module that needs OnPlayerDisconnect gets called from here.
+Instance.OnPlayerDisconnect((event) => {
+    teamconfiguration.onPlayerDisconnect(event);
+    mainMenu.refreshInputCapture();
+});
+
+// Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
+// registered per event name, so each module with a custom_hud_layout gets called from here.
+Instance.OnCustomHudClicked((event) => {
+    welcomeHud.onCustomHudClicked(event);
+    mainMenu.onCustomHudClicked(event);
+});
+
 Instance.OnActivate(() => {
     Instance.Msg("Script activated!!!");
     mapselect.onActivate();
     startgame.onActivate();
     teamconfiguration.onActivate();
+    mainMenu.onActivate();
 });
 
 Instance.OnRoundStart(() => {
@@ -29,26 +60,12 @@ Instance.OnRoundStart(() => {
     throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();
     configurationweapon.onRoundStart();
+    mainMenu.onRoundStart();
 });
 
-Instance.OnScriptInput("StartGame", () => {
-    if (getGameHasStarted()) return;
-
-    playSound("startgame_success_sound");
-    setGameHasStarted(true);
-    Instance.EntFireAtName({
-        name: "configuration_sky",
-        input: "Disable",
-    });
-    mapselect.onStartGame(() => {
-        startgame.onStartGame();
-        // startgame.onStartGame() issues mp_restartgame 1, which doesn't actually restart the round
-        // until a moment after that - bots get re-evaluated/respawned then, and CS2's bot
-        // team-balancing can silently undo a JoinTeam() call made before that point. Assign teams
-        // after the restart has actually happened, not before it's even been requested.
-        timers.setTimeout(() => teamconfiguration.onStartGame(), 0.1);
-    });
-});
+// Kept for the legacy in-world "start_button" - routes through the same flow the HUD's start
+// button uses.
+Instance.OnScriptInput("StartGame", () => beginGame(() => {}));
 
 Instance.SetThink(() => {
     timers.think();

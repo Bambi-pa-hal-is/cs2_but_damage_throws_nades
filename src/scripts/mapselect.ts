@@ -1,6 +1,7 @@
 import { BaseModelEntity, Instance } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
 import { getGameHasStarted, CONFIGURATION_SPAWN_NAME } from "../shared/gamestate";
+import { getMainMenuLayout } from "../shared/hud";
 import * as timers from "../shared/timers";
 
 const maps = [
@@ -19,9 +20,16 @@ const maps = [
     "de_cache"
 ];
 
+const MAP_BUTTON_ID_PREFIX = "map_";
+
 let selectedMap = maps[Math.floor(Math.random() * maps.length)];
 
+export const getSelectedMap = (): string => selectedMap;
+
+// Paints both the legacy in-world glow AND the new HUD's "Selected" card highlight, so either UI
+// stays correct no matter which one (or which script reload path) drove the change.
 const highlightMapButton = (selectedMap: string) => {
+    const layout = getMainMenuLayout();
     for (let i = 0; i < maps.length; i++) {
         const map = maps[i];
         const mapButton = Instance.FindEntityByName(map);
@@ -33,6 +41,7 @@ const highlightMapButton = (selectedMap: string) => {
                 mapButton.Glow({ r: 0, g: 255, b: 0 });
             }
         }
+        layout?.SetHasClass(MAP_BUTTON_ID_PREFIX + map, "Selected", map === selectedMap);
     }
 };
 
@@ -40,13 +49,28 @@ const highlightSelectedMap = () => {
     highlightMapButton(selectedMap);
 };
 
+// Called by mainMenu.ts when the host (playerController[0]) clicks a map card in the HUD.
+export const selectMap = (mapName: string): void => {
+    if (!maps.includes(mapName) || mapName === selectedMap) return;
+    selectedMap = mapName;
+    highlightMapButton(selectedMap);
+};
+
+export const renderHud = (): void => {
+    highlightSelectedMap();
+};
+
 export const onActivate = () => {
     highlightSelectedMap();
 };
 
+// Kept for the legacy in-world map buttons - RunScriptInput passes the button itself as `caller`,
+// whose entity name is the map name.
 Instance.OnScriptInput("SelectMap", (caller) => {
-    selectedMap = caller?.caller?.GetEntityName() ?? selectedMap;
-    highlightMapButton(selectedMap);
+    const mapName = caller?.caller?.GetEntityName();
+    if (mapName) {
+        selectMap(mapName);
+    }
 });
 
 export const onRoundStart = () => {

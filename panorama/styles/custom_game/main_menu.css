@@ -1,0 +1,451 @@
+.Root {
+	width: 100%;
+	height: 100%;
+	background-color: #00000000;
+}
+
+.MenuRoot {
+	width: 100%;
+	height: 100%;
+
+	&.Hidden {
+		visibility: collapse;
+	}
+}
+
+.Window {
+	width: 92%;
+	height: 90%;
+	horizontal-align: center;
+	vertical-align: center;
+	flow-children: down;
+	background-color: #101215f2;
+	border: 1px solid #f5a62355;
+	border-radius: 8px;
+}
+
+.TitleBar {
+	height: 9%;
+	padding: 18px 28px 0px 28px;
+	flow-children: down;
+	horizontal-align: center;
+	border-bottom: 1px solid #ffffff18;
+}
+
+.Title {
+	color: #ffffff;
+	font-size: 34px;
+	letter-spacing: 3px;
+	text-align: center;
+	horizontal-align: center;
+}
+
+.Subtitle {
+	color: #f5a623;
+	font-size: 16px;
+	letter-spacing: 2px;
+	text-align: center;
+	horizontal-align: center;
+	margin-top: 6px;
+}
+
+/* --- Tab bar --- */
+
+.TabBar {
+	height: 6%;
+	flow-children: right;
+	horizontal-align: center;
+	padding: 8px 20px 0px 20px;
+}
+
+.TabButton {
+	padding: 14px 40px 0px 40px;
+	height: 48px;
+	margin: 0px 4px;
+	color: #9aa0a6;
+	font-size: 18px;
+	letter-spacing: 2px;
+	text-align: center;
+	border-radius: 5px 5px 0px 0px;
+	border-bottom: 3px solid #00000000;
+	background-color: #ffffff00;
+
+	transition-property: color, border-color, background-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		color: #ffffff;
+		background-color: #ffffff0d;
+	}
+
+	&.Active {
+		color: #f5a623;
+		background-color: #f5a62318;
+		border-bottom: 3px solid #f5a623;
+	}
+}
+
+.TabPanel {
+	width: 100%;
+	height: 77%;
+	padding: 32px 40px;
+	flow-children: right;
+
+	&.Hidden {
+		visibility: collapse;
+	}
+}
+
+.FooterBar {
+	width: 100%;
+	height: 8%;
+	padding: 0px 30px;
+	border-top: 1px solid #ffffff18;
+}
+
+#panel_map {
+	flow-children: down;
+}
+
+/* --- Map panel --- */
+
+.MapGrid {
+	width: 100%;
+	flow-children: down;
+}
+
+/* Panorama has no flex justify-content, so rows are auto-width (shrink to their cards) and
+   centered explicitly - that's what keeps left/right leftover space equal instead of the whole
+   row hugging the left edge. */
+.MapRow {
+	flow-children: right;
+	horizontal-align: center;
+}
+
+.MapCard {
+	width: 230px;
+	height: 156px;
+	margin: 0px 16px 16px 0px;
+	flow-children: down;
+	background-color: #1c1f24;
+	border: 1px solid #ffffff22;
+	border-radius: 6px;
+
+	transition-property: border-color, background-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		border-color: #f5a62399;
+	}
+
+	&.Selected {
+		border-color: #f5a623;
+		background-color: #2a2410;
+	}
+}
+
+.MapThumb {
+	width: 100%;
+	height: 104px;
+}
+
+.MapCardFooter {
+	width: 100%;
+	height: 48px;
+	horizontal-align: center;
+	vertical-align: center;
+	background-color: #00000066;
+}
+
+.MapName {
+	color: #e8e8e8;
+	font-size: 18px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.MapCard.Selected .MapCardFooter {
+	background-color: #f5a62333;
+}
+
+/* --- Teams panel --- */
+
+.TeamColumn {
+	width: 48%;
+	height: 100%;
+	flow-children: down;
+	background-color: #ffffff08;
+	border-radius: 6px;
+	padding: 20px;
+	margin-right: 4%;
+
+	&.CT {
+		border-top: 3px solid #6fa3d8;
+		background-color: #6fa3d812;
+	}
+
+	&.T {
+		border-top: 3px solid #d1a054;
+		background-color: #d1a05412;
+		margin-right: 0px;
+	}
+}
+
+.TeamHeader {
+	height: 40px;
+	horizontal-align: center;
+}
+
+.TeamHeaderLabel {
+	color: #cfd6dc;
+	font-size: 18px;
+	letter-spacing: 2px;
+	text-align: center;
+	horizontal-align: center;
+}
+
+.SlotList {
+	width: 100%;
+	flow-children: down;
+	margin-top: 10px;
+}
+
+.PlayerSlot {
+	width: 100%;
+	height: 40px;
+	margin-bottom: 8px;
+	padding: 0px 14px;
+	flow-children: right;
+	vertical-align: center;
+	background-color: #ffffff1F;
+	border-radius: 4px;
+	opacity: 1;
+
+	transition-property: opacity;
+	transition-duration: 0.12s;
+
+	&.Empty {
+		opacity: 0.3;
+	}
+}
+
+.PlayerName {
+	width: 80%;
+	color: #eef1f3;
+	font-size: 17px;
+	vertical-align: center;
+}
+
+.MoveButton {
+	width: 40px;
+	height: 36px;
+	horizontal-align: center;
+	vertical-align: center;
+	background-color: #ffffff18;
+	border-radius: 4px;
+
+	transition-property: background-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		background-color: #ffffff35;
+	}
+}
+
+.MoveButton Label {
+	color: #f5a623;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 18px;
+}
+
+.MoveButton Label:hover {
+	cursor: pointer;
+}
+
+/* --- Rules panel --- */
+
+.RulesColumn {
+	width: 48%;
+	height: 100%;
+	flow-children: down;
+	margin-right: 4%;
+
+	&.Last {
+		margin-right: 0px;
+	}
+}
+
+.RuleRow {
+	width: 100%;
+	height: 56px;
+	margin-bottom: 10px;
+	padding: 0px 8px;
+	flow-children: right;
+	vertical-align: center;
+	background-color: #ffffff06;
+	border-radius: 4px;
+}
+
+.RuleLabel {
+	width: 70%;
+	color: #dfe3e6;
+	font-size: 17px;
+	vertical-align: center;
+}
+
+.Checkbox {
+	width: 34px;
+	height: 34px;
+	horizontal-align: right;
+	vertical-align: center;
+	background-color: #ffffff10;
+	border: 1px solid #ffffff44;
+	border-radius: 5px;
+
+	transition-property: background-color, border-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		border-color: #f5a62399;
+	}
+
+	&.Checked {
+		background-color: #21361f;
+		border-color: #6fce6a;
+	}
+}
+
+.CheckMark {
+	width: 100%;
+	height: 100%;
+	background-color: #6fce6a;
+	opacity: 0;
+
+	transition-property: opacity;
+	transition-duration: 0.1s;
+}
+
+.Checkbox.Checked .CheckMark {
+	opacity: 1;
+}
+
+.Stepper {
+	height: 34px;
+	horizontal-align: right;
+	vertical-align: center;
+	flow-children: right;
+}
+
+.StepButton {
+	width: 34px;
+	height: 34px;
+	background-color: #ffffff18;
+	border-radius: 4px;
+
+	transition-property: background-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		background-color: #ffffff35;
+	}
+}
+
+.StepButton Label {
+	color: #ffffff;
+	font-size: 19px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.StepValue {
+	width: 96px;
+	height: 34px;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.StepValue Label {
+	color: #f5a623;
+	font-size: 18px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+/* --- Start button / spinner --- */
+
+.StartArea {
+	width: 240px;
+	height: 76%;
+	horizontal-align: right;
+	vertical-align: center;
+}
+
+.StartButton {
+	width: 100%;
+	height: 100%;
+	horizontal-align: center;
+	vertical-align: center;
+	background-color: #f5a623;
+	border-radius: 8px;
+
+	transition-property: background-color;
+	transition-duration: 0.12s;
+
+	&:hover {
+		background-color: #ffb84d;
+	}
+
+	&.Disabled {
+		background-color: #5a4a2a;
+	}
+}
+
+.StartLabel {
+	color: #101215;
+	font-size: 24px;
+	letter-spacing: 2px;
+	text-align: center;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
+.Spinner {
+	width: 100%;
+	height: 100%;
+	horizontal-align: center;
+	vertical-align: center;
+	flow-children: down;
+	background-color: #101215ee;
+	border-radius: 8px;
+	border: 1px solid #f5a62355;
+
+	&.Hidden {
+		visibility: collapse;
+	}
+}
+
+.SpinnerRing {
+	width: 32px;
+	height: 32px;
+	margin-top: 12px;
+	horizontal-align: center;
+	border-radius: 50%;
+	border-top: 4px solid #f5a623;
+	border-right: 4px solid #ffffff33;
+	border-bottom: 4px solid #ffffff33;
+	border-left: 4px solid #ffffff33;
+}
+
+.SpinnerLabel {
+	color: #cfd6dc;
+	font-size: 12px;
+	letter-spacing: 2px;
+	text-align: center;
+	horizontal-align: center;
+	margin-top: 6px;
+}

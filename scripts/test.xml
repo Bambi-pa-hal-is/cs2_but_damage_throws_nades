@@ -1,0 +1,16 @@
+<root>
+	<styles>
+		<include src="file://{resources}/test.css" />
+	</styles>
+
+
+	<Panel class="Root">
+		<Panel id="dialog" class="Dismissed">
+			<Label class="Body" text="Welcome to but_damage_throws_nades!" />
+			<Button id="dismiss_button">
+				<Label text="Dismiss" />
+			</Button>
+			<Image src="" />
+		</Panel>
+	</Panel>
+</root>
