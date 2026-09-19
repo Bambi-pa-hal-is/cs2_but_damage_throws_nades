@@ -35,9 +35,6 @@ const warmupSettings = () => {
     Instance.ServerCommand("sv_autobunnyhopping 1");
     Instance.ServerCommand("sv_enablebunnyhopping 1");
     Instance.ServerCommand("mp_autokick 0");
-    if(!Instance.IsWarmupPeriod()) { //we need to check if it already is warmup or an infinite loop will occur
-        Instance.ServerCommand("mp_warmup_start 1");
-    }
 };
 
 const resetWarmupSettings = () => {

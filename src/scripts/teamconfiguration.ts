@@ -117,15 +117,23 @@ export const handleSlotClick = (team: "ct" | "t", index: number): void => {
 
 const updatePlayerTeams = (): void => {
     for (const player of configuration.players) {
-        const desiredTeam = player.teamToJoinWhenGameStart;
-
-        if (!player.playerController?.IsValid?.()) {
+        const controller = player.playerController;
+        if (!controller?.IsValid?.()) {
             Instance.Msg(`No valid controller found for player id=${player.id}, skipping team change.`);
             continue;
         }
 
+        const desiredTeam = player.teamToJoinWhenGameStart;
+        // Read the live team instead of trusting the possibly-stale `currentTeam` field - a map
+        // reset (rockthevote) can leave a player on T from the previous match, so this needs to
+        // catch a T -> CT swap just as reliably as the usual CT -> T one.
+        const liveTeam = controller.GetTeamNumber();
+        player.currentTeam = liveTeam;
+
+        if (liveTeam === desiredTeam) continue;
+
         try {
-            player.playerController.JoinTeam(desiredTeam);
+            controller.JoinTeam(desiredTeam);
             player.currentTeam = desiredTeam;
         } catch (error) {
             Instance.Msg(`Failed to move player id=${player.id} : ${error}`);

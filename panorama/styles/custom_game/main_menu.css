@@ -16,10 +16,10 @@
 .MenuRoot {
 	width: 100%;
 	height: 100%;
+}
 
-	&.Hidden {
-		visibility: collapse;
-	}
+.MenuRoot.Hidden {
+	visibility: collapse;
 }
 
 .Window {
@@ -105,11 +105,11 @@
 	vertical-align: center;
 	border-radius: 8px;
 	background-color: #ffffff08;
+}
 
-	&.Active {
-		color: #ffffff;
-		background-color: #3da9fc;
-	}
+.TabButton.Active {
+	color: #ffffff;
+	background-color: #3da9fc;
 }
 
 .TabButton Label {
@@ -123,10 +123,10 @@
 	height: 72%;
 	padding: 12px 32px 28px 32px;
 	flow-children: right;
+}
 
-	&.Hidden {
-		visibility: collapse;
-	}
+.TabPanel.Hidden {
+	visibility: collapse;
 }
 
 .CountdownPanel {
@@ -196,10 +196,22 @@
 	border-radius: 10px;
 	box-shadow: 0px 6px 14px 0px #00000055;
 
-	&.Selected {
-		border-color: #3da9fc;
-		background-color: #12222bff;
-	}
+	transition-property: border-color, background-color;
+	transition-duration: 0.12s;
+}
+
+.MapCard:hover {
+	border-color: #ff0000ff;
+	background-color: #ff000055;
+}
+
+.MapCard.Selected {
+	border-color: #3da9fc;
+	background-color: #12222bff;
+}
+
+.MapCard.Selected:hover {
+	background-color: #163040ff;
 }
 
 .MapThumb {
@@ -241,17 +253,17 @@
 	border-radius: 10px;
 	padding: 18px;
 	margin-right: 4%;
+}
 
-	&.CT {
-		border-top: 4px solid #5b9bd5;
-		background-color: #5b9bd50f;
-	}
+.TeamColumn.CT {
+	border-top: 4px solid #5b9bd5;
+	background-color: #5b9bd50f;
+}
 
-	&.T {
-		border-top: 4px solid #d1a054;
-		background-color: #d1a0540f;
-		margin-right: 0px;
-	}
+.TeamColumn.T {
+	border-top: 4px solid #d1a054;
+	background-color: #d1a0540f;
+	margin-right: 0px;
 }
 
 .TeamHeader {
@@ -301,10 +313,10 @@
 
 	transition-property: opacity;
 	transition-duration: 0.12s;
+}
 
-	&.Empty {
-		opacity: 0.35;
-	}
+.PlayerSlot.Empty {
+	opacity: 0.35;
 }
 
 .PlayerSlot.Empty .MoveButton {
@@ -379,10 +391,10 @@
 	height: 100%;
 	flow-children: down;
 	margin-right: 4%;
+}
 
-	&.Last {
-		margin-right: 0px;
-	}
+.RulesColumn.Last {
+	margin-right: 0px;
 }
 
 .SectionEyebrow {
@@ -425,15 +437,15 @@
 	vertical-align: center;
 	background-color: #ffffff00;
 	border-radius: 4px;
+}
 
-	&.Paired {
-		margin-bottom: 2px;
-		background-color: #ffffff00;
+.RuleRow.Paired {
+	margin-bottom: 2px;
+	background-color: #ffffff00;
+}
 
-		&.Last {
-			margin-bottom: 0px;
-		}
-	}
+.RuleRow.Paired.Last {
+	margin-bottom: 0px;
 }
 
 .RuleLabel {
@@ -451,11 +463,11 @@
 	background-color: #ffffff0d;
 	border: 1px solid #ffffff3a;
 	border-radius: 6px;
+}
 
-	&.Checked {
-		background-color: #21361f;
-		border-color: #6fce6a;
-	}
+.Checkbox.Checked {
+	background-color: #21361f;
+	border-color: #6fce6a;
 }
 
 .CheckMark {
@@ -532,10 +544,10 @@
 	vertical-align: center;
 	background-color: #3da9fc;
 	border-radius: 8px;
+}
 
-	&.Disabled {
-		background-color: #2b3540;
-	}
+.StartButton.Disabled {
+	background-color: #2b3540;
 }
 
 .StartLabel {
@@ -556,10 +568,10 @@
 	background-color: #101215ee;
 	border-radius: 8px;
 	border: 1px solid #3da9fc55;
+}
 
-	&.Hidden {
-		visibility: collapse;
-	}
+.Spinner.Hidden {
+	visibility: collapse;
 }
 
 .SpinnerRing {

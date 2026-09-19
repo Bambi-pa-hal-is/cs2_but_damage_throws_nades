@@ -25,7 +25,7 @@
 				<Button id="tab_rules" class="TabButton">
 					<Label text="RULES" />
 				</Button>
-				<Button id="tab_starting" class="TabButton">
+				<Button id="tab_starting" class="TabButton Hidden">
 					<Label text="STARTING" />
 				</Button>
 			</Panel>
