@@ -105,11 +105,27 @@
 	vertical-align: center;
 	border-radius: 8px;
 	background-color: #ffffff08;
+
+	transition-property: background-color, color;
+	transition-duration: 0.12s;
+}
+
+.TabButton:hover {
+	color: #ffffff;
+	background-color: #ffffff16;
 }
 
 .TabButton.Active {
 	color: #ffffff;
 	background-color: #3da9fc;
+}
+
+.TabButton.Active:hover {
+	background-color: #5cb8fd;
+}
+
+.TabButton.Hidden {
+	visibility: collapse;
 }
 
 .TabButton Label {
@@ -177,6 +193,7 @@
 
 #panel_map {
 	flow-children: down;
+	overflow: noclip;
 }
 
 /* --- Map panel --- */
@@ -184,6 +201,7 @@
 .MapGrid {
 	width: 100%;
 	flow-children: right-wrap;
+	overflow: noclip;
 }
 
 .MapCard {
@@ -196,13 +214,17 @@
 	border-radius: 10px;
 	box-shadow: 0px 6px 14px 0px #00000055;
 
-	transition-property: border-color, background-color;
-	transition-duration: 0.12s;
+	transition-property: border-color, background-color, transform, box-shadow;
+	transition-duration: 0.15s;
+	transition-timing-function: ease-out;
 }
 
 .MapCard:hover {
-	border-color: #ff0000ff;
-	background-color: #ff000055;
+	border-color: #3da9fc80;
+	background-color: #1c212aff;
+	box-shadow: 0px 12px 26px 0px #000000aa;
+	transform: scale3d(1.045, 1.045, 1.0);
+	z-index: 2;
 }
 
 .MapCard.Selected {
@@ -211,7 +233,11 @@
 }
 
 .MapCard.Selected:hover {
-	background-color: #163040ff;
+	border-color: #3da9fc;
+	background-color: #16304aff;
+	box-shadow: 0px 12px 26px 0px #000000aa;
+	transform: scale3d(1.045, 1.045, 1.0);
+	z-index: 2;
 }
 
 .MapThumb {
@@ -364,6 +390,14 @@
 	background-color: #3da9fc40;
 	border: 1px solid #3da9fcaa;
 	border-radius: 6px;
+
+	transition-property: background-color, border-color;
+	transition-duration: 0.12s;
+}
+
+.MoveButton:hover {
+	background-color: #3da9fc70;
+	border-color: #3da9fcff;
 }
 
 .TeamColumn.CT .MoveButton {
@@ -463,11 +497,24 @@
 	background-color: #ffffff0d;
 	border: 1px solid #ffffff3a;
 	border-radius: 6px;
+
+	transition-property: background-color, border-color;
+	transition-duration: 0.12s;
+}
+
+.Checkbox:hover {
+	background-color: #ffffff1c;
+	border-color: #ffffff6e;
 }
 
 .Checkbox.Checked {
 	background-color: #21361f;
 	border-color: #6fce6a;
+}
+
+.Checkbox.Checked:hover {
+	background-color: #2c4529;
+	border-color: #8ee089;
 }
 
 .CheckMark {
@@ -498,6 +545,13 @@
 	color: #ffffff;
 	background-color: #ffffff10;
 	border-radius: 6px;
+
+	transition-property: background-color;
+	transition-duration: 0.12s;
+}
+
+.StepButton:hover {
+	background-color: #ffffff26;
 }
 
 .StepButton Label {
@@ -535,6 +589,7 @@
 	height: 70%;
 	horizontal-align: right;
 	vertical-align: center;
+	overflow: noclip;
 }
 
 .StartButton {
@@ -544,10 +599,23 @@
 	vertical-align: center;
 	background-color: #3da9fc;
 	border-radius: 8px;
+
+	transition-property: background-color, transform;
+	transition-duration: 0.12s;
+}
+
+.StartButton:hover {
+	background-color: #5cb8fd;
+	transform: scale3d(1.03, 1.03, 1.0);
 }
 
 .StartButton.Disabled {
 	background-color: #2b3540;
+}
+
+.StartButton.Disabled:hover {
+	background-color: #2b3540;
+	transform: scale3d(1.0, 1.0, 1.0);
 }
 
 .StartLabel {
