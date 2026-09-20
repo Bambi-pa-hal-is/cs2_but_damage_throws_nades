@@ -45,10 +45,16 @@ export const onPlayerChat = (event: { player?: CSPlayerController, text: string,
     // actually needed", for display - floor(count/2) + 1 is the smallest integer vote count that
     // satisfies that same condition.
     const votesNeeded = Math.floor(realPlayerCount / 2) + 1;
+    const votePassed = realPlayerCount > 0 && votedSlots.size > realPlayerCount / 2;
     printToChat(`${player.GetPlayerName()} voted to reset the map (${votedSlots.size}/${realPlayerCount})`);
-    rtvHint.showVoteStatus(votedSlots.size, votesNeeded);
 
-    if (realPlayerCount > 0 && votedSlots.size > realPlayerCount / 2) {
+    // Skip the on-screen tally for the vote that actually passes - the menu reopens right after,
+    // and a leftover "1 / 1 votes" popup just clutters the map-select UI it reopens into.
+    if (!votePassed) {
+        rtvHint.showVoteStatus(votedSlots.size, votesNeeded);
+    }
+
+    if (votePassed) {
         passVote();
     }
 };

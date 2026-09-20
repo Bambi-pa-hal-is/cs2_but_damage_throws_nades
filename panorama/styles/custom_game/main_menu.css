@@ -689,9 +689,8 @@
 
 .RtvHint {
 	width: 100%;
-	horizontal-align: left;
+	horizontal-align: center;
 	vertical-align: bottom;
-	margin-left: 48px;
 	margin-bottom: 140px;
 }
 
@@ -704,7 +703,7 @@
 	font-size: 16px;
 	letter-spacing: 1px;
 	text-align: center;
-	horizontal-align: left;
+	horizontal-align: center;
 	padding: 10px 22px;
 	background-color: #000000b0;
 	border: 1px solid #e8a33d80;
