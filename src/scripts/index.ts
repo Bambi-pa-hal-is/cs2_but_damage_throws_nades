@@ -6,6 +6,7 @@ import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as welcomeHud from "./welcomeHud";
 import * as mainMenu from "./mainMenu";
 import * as rockthevote from "./rockthevote";
+import * as rtvHint from "./rtvHint";
 import * as timers from "../shared/timers";
 import { onPlayerReset } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
@@ -58,6 +59,7 @@ Instance.OnActivate(() => {
     startgame.onActivate();
     teamconfiguration.onActivate();
     mainMenu.onActivate();
+    rtvHint.onActivate();
 });
 
 Instance.OnRoundStart(() => {
@@ -67,6 +69,7 @@ Instance.OnRoundStart(() => {
     teamconfiguration.onRoundStart();
     rockthevote.onRoundStart();
     mainMenu.onRoundStart();
+    rtvHint.onRoundStart();
 });
 
 Instance.SetThink(() => {

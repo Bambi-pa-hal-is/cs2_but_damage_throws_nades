@@ -5,6 +5,7 @@ import * as mapselect from "./mapselect";
 import * as mapReset from "./mapReset";
 import * as startgame from "./startgame";
 import * as mainMenu from "./mainMenu";
+import * as rtvHint from "./rtvHint";
 
 const TRIGGER_PHRASES = new Set(["!rtv", "!rockthevote", "!reset"]);
 
@@ -40,7 +41,12 @@ export const onPlayerChat = (event: { player?: CSPlayerController, text: string,
     votedSlots.add(slot);
 
     const realPlayerCount = countRealPlayers();
+    // Majority rule (votedSlots.size > realPlayerCount / 2) restated as "how many votes are
+    // actually needed", for display - floor(count/2) + 1 is the smallest integer vote count that
+    // satisfies that same condition.
+    const votesNeeded = Math.floor(realPlayerCount / 2) + 1;
     printToChat(`${player.GetPlayerName()} voted to reset the map (${votedSlots.size}/${realPlayerCount})`);
+    rtvHint.showVoteStatus(votedSlots.size, votesNeeded);
 
     if (realPlayerCount > 0 && votedSlots.size > realPlayerCount / 2) {
         passVote();

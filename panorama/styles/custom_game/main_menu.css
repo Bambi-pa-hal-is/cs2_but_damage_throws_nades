@@ -1,10 +1,11 @@
 /* ============================================================================
-   Design system
-   - surfaces: void (transparent) < base (window) < raised (cards/rows) < inset (wells)
-   - one accent color (orange) used consistently for interactive/selected states
+   Design system - CS2 main menu inspired
+   - surfaces: void (transparent) < base (frosted window over blurred world) <
+     raised (cards/rows) < inset (wells)
+   - one accent color (warm gold/orange, matching CS2's own menu accent) used
+     consistently for interactive/selected states
    - team colors (CT blue / T tan) used only inside the Teams tab
-   - a repeated "accent bar" motif ties the title, team columns and rule groups
-     together as one visual language instead of unrelated ad-hoc boxes
+   - solid black window with a gold accent line and rounded corners
    ============================================================================ */
 
 .Root {
@@ -28,8 +29,9 @@
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
-	background-color: #0b0d10ff;
-	border: 1px solid #3da9fc40;
+	background-color: #000000ff;
+	border: 1px solid #ffffff1a;
+	border-top: 2px solid #e8a33d;
 	border-radius: 14px;
 }
 
@@ -46,11 +48,10 @@
 }
 
 .TitleAccent {
-	width: 4px;
-	height: 44px;
+	width: 3px;
+	height: 40px;
 	vertical-align: center;
-	background-color: #3da9fc;
-	border-radius: 2px;
+	background-color: #e8a33d;
 }
 
 .TitleBlock {
@@ -60,8 +61,9 @@
 }
 
 .Eyebrow {
-	color: #3da9fc;
+	color: #e8a33d;
 	font-size: 13px;
+	font-weight: medium;
 	letter-spacing: 3px;
 	text-align: left;
 }
@@ -69,17 +71,19 @@
 .Title {
 	color: #f5f6f7;
 	font-size: 32px;
-	letter-spacing: 2px;
+	font-weight: bold;
+	letter-spacing: 1px;
 	text-align: left;
 	margin-top: 2px;
 }
 
 .Credit {
-	color: #b8bcc2;
+	color: #9aa0a6;
 	font-size: 18px;
 	letter-spacing: 1px;
 	padding: 8px 16px;
 	background-color: #00000055;
+	border: 1px solid #ffffff14;
 	border-radius: 999px;
 	horizontal-align: right;
 	vertical-align: center;
@@ -88,40 +92,47 @@
 /* --- Tab bar --- */
 
 .TabBar {
+	width: 100%;
 	height: 8%;
 	flow-children: right;
 	vertical-align: center;
-	padding: 10px 32px 0px 32px;
+	padding: 0px 32px 0px 32px;
+	border-bottom: 1px solid #ffffff14;
 }
 
 .TabButton {
 	height: 36px;
-	padding: 0px 26px;
-	margin-right: 8px;
-	color: #9aa0a6;
-	font-size: 14px;
+	padding: 0px 22px;
+	margin-right: 4px;
+	color: #8a8f97;
+	font-size: 13px;
+	font-weight: medium;
 	letter-spacing: 2px;
 	text-align: center;
 	vertical-align: center;
+	background-color: #ffffff00;
 	border-radius: 8px;
-	background-color: #ffffff08;
 
 	transition-property: background-color, color;
 	transition-duration: 0.12s;
 }
 
 .TabButton:hover {
-	color: #ffffff;
-	background-color: #ffffff16;
+	color: #e7e9ec;
+	background-color: #ffffff0a;
 }
 
 .TabButton.Active {
-	color: #ffffff;
-	background-color: #3da9fc;
+	color: #e8a33d;
+	font-weight: bold;
+	background-color: #e8a33d14;
+	box-shadow: inset #e8a33d 0px -2px 0px 0px;
 }
 
 .TabButton.Active:hover {
-	background-color: #5cb8fd;
+	color: #f5bd68;
+	background-color: #e8a33d1f;
+	box-shadow: inset #f5bd68 0px -2px 0px 0px;
 }
 
 .TabButton.Hidden {
@@ -156,8 +167,9 @@
 }
 
 .CountdownCaption {
-	color: #cfd6dc;
+	color: #9aa0a6;
 	font-size: 20px;
+	letter-spacing: 1px;
 	text-align: center;
 	horizontal-align: center;
 }
@@ -168,8 +180,9 @@
 }
 
 .CountdownNumber Label {
-	color: #3da9fc;
+	color: #e8a33d;
 	font-size: 72px;
+	font-weight: bold;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
@@ -220,21 +233,21 @@
 }
 
 .MapCard:hover {
-	border-color: #3da9fc80;
-	background-color: #1c212aff;
+	border-color: #e8a33d80;
+	background-color: #1c1a16ff;
 	box-shadow: 0px 12px 26px 0px #000000aa;
 	transform: scale3d(1.045, 1.045, 1.0);
 	z-index: 2;
 }
 
 .MapCard.Selected {
-	border-color: #3da9fc;
-	background-color: #12222bff;
+	border-color: #e8a33d;
+	background-color: #2a2118ff;
 }
 
 .MapCard.Selected:hover {
-	border-color: #3da9fc;
-	background-color: #16304aff;
+	border-color: #e8a33d;
+	background-color: #302517ff;
 	box-shadow: 0px 12px 26px 0px #000000aa;
 	transform: scale3d(1.045, 1.045, 1.0);
 	z-index: 2;
@@ -265,7 +278,7 @@
 }
 
 .MapCard.Selected .MapCardFooter {
-	background-color: #3da9fc33;
+	background-color: #e8a33d2e;
 }
 
 /* --- Teams panel --- */
@@ -387,17 +400,17 @@
 	width: 38px;
 	height: 34px;
 	vertical-align: center;
-	background-color: #3da9fc40;
-	border: 1px solid #3da9fcaa;
-	border-radius: 6px;
+	background-color: #e8a33d30;
+	border: 1px solid #e8a33d99;
+	border-radius: 8px;
 
 	transition-property: background-color, border-color;
 	transition-duration: 0.12s;
 }
 
 .MoveButton:hover {
-	background-color: #3da9fc70;
-	border-color: #3da9fcff;
+	background-color: #e8a33d60;
+	border-color: #e8a33dff;
 }
 
 .TeamColumn.CT .MoveButton {
@@ -411,7 +424,7 @@
 }
 
 .MoveButton Label {
-	color: #3da9fc;
+	color: #e8a33d;
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
@@ -432,8 +445,9 @@
 }
 
 .SectionEyebrow {
-	color: #3da9fc;
+	color: #e8a33d;
 	font-size: 12px;
+	font-weight: medium;
 	letter-spacing: 3px;
 	margin-bottom: 10px;
 }
@@ -448,8 +462,8 @@
 	margin-bottom: 18px;
 	background-color: #ffffff06;
 	border: 1px solid #ffffff12;
-	border-left: 3px solid #3da9fc99;
-	border-radius: 6px;
+	border-left: 3px solid #e8a33d99;
+	border-radius: 8px;
 }
 
 .RuleGroup {
@@ -458,8 +472,8 @@
 	margin-bottom: 18px;
 	background-color: #ffffff06;
 	border: 1px solid #ffffff12;
-	border-left: 3px solid #3da9fc99;
-	border-radius: 6px;
+	border-left: 3px solid #e8a33d99;
+	border-radius: 8px;
 }
 
 .RuleRow {
@@ -470,7 +484,7 @@
 	flow-children: right;
 	vertical-align: center;
 	background-color: #ffffff00;
-	border-radius: 4px;
+	border-radius: 8px;
 }
 
 .RuleRow.Paired {
@@ -496,7 +510,7 @@
 	vertical-align: center;
 	background-color: #ffffff0d;
 	border: 1px solid #ffffff3a;
-	border-radius: 6px;
+	border-radius: 8px;
 
 	transition-property: background-color, border-color;
 	transition-duration: 0.12s;
@@ -544,7 +558,7 @@
 	height: 32px;
 	color: #ffffff;
 	background-color: #ffffff10;
-	border-radius: 6px;
+	border-radius: 8px;
 
 	transition-property: background-color;
 	transition-duration: 0.12s;
@@ -564,6 +578,13 @@
 	vertical-align: center;
 }
 
+/* The minus glyph's ink sits higher than the plus glyph's in this font even after switching to
+   the proper Unicode minus sign (U+2212) - nudge it down a couple pixels so the two visually
+   line up instead of the minus floating above center. */
+.StepButtonMinus Label {
+	margin-top: 3px;
+}
+
 .StepValue {
 	width: 92px;
 	height: 32px;
@@ -571,11 +592,11 @@
 	horizontal-align: center;
 	vertical-align: center;
 	background-color: #ffffff08;
-	border-radius: 6px;
+	border-radius: 8px;
 }
 
 .StepValue Label {
-	color: #3da9fc;
+	color: #e8a33d;
 	font-size: 17px;
 	text-align: center;
 	horizontal-align: center;
@@ -597,7 +618,7 @@
 	height: 100%;
 	horizontal-align: center;
 	vertical-align: center;
-	background-color: #3da9fc;
+	background-color: #e8a33d;
 	border-radius: 8px;
 
 	transition-property: background-color, transform;
@@ -605,7 +626,7 @@
 }
 
 .StartButton:hover {
-	background-color: #5cb8fd;
+	background-color: #f5bd68;
 	transform: scale3d(1.03, 1.03, 1.0);
 }
 
@@ -619,8 +640,9 @@
 }
 
 .StartLabel {
-	color: #ffffff;
+	color: #14100a;
 	font-size: 20px;
+	font-weight: bold;
 	letter-spacing: 2px;
 	text-align: center;
 	horizontal-align: center;
@@ -635,7 +657,7 @@
 	flow-children: down;
 	background-color: #101215ee;
 	border-radius: 8px;
-	border: 1px solid #3da9fc55;
+	border: 1px solid #e8a33d55;
 }
 
 .Spinner.Hidden {
@@ -648,7 +670,7 @@
 	margin-top: 10px;
 	horizontal-align: center;
 	border-radius: 50%;
-	border-top: 4px solid #3da9fc;
+	border-top: 4px solid #e8a33d;
 	border-right: 4px solid #ffffff33;
 	border-bottom: 4px solid #ffffff33;
 	border-left: 4px solid #ffffff33;
@@ -661,4 +683,30 @@
 	text-align: center;
 	horizontal-align: center;
 	margin-top: 6px;
+}
+
+/* --- Rock-the-vote hint (shown briefly at the start of a live round) --- */
+
+.RtvHint {
+	width: 100%;
+	horizontal-align: left;
+	vertical-align: bottom;
+	margin-left: 48px;
+	margin-bottom: 140px;
+}
+
+.RtvHint.Hidden {
+	visibility: collapse;
+}
+
+.RtvHintText {
+	color: #f2f3f4;
+	font-size: 16px;
+	letter-spacing: 1px;
+	text-align: center;
+	horizontal-align: left;
+	padding: 10px 22px;
+	background-color: #000000b0;
+	border: 1px solid #e8a33d80;
+	border-radius: 8px;
 }

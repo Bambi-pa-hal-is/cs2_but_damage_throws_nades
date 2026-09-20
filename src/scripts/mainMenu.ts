@@ -25,6 +25,10 @@ let countdownGeneration = 0;
 // True once the real Start Game flow has been kicked off - once set, clicking the Starting tab
 // just switches to it without restarting/overriding that countdown with a preview one.
 let realStartTriggered = false;
+// Tracks whether the menu is currently up, so onRoundStart() can tell "menu just reappeared after
+// being hidden" (reset the chrome/active tab) apart from "menu was already up and a routine
+// warmup round restart fired" (leave whatever tab the host is on alone).
+let menuVisible = false;
 
 type Tab = "map" | "teams" | "rules" | "starting";
 
@@ -93,6 +97,7 @@ export const onActivate = (): void => {
     if (!layout) return;
 
     layout.SetHasClass(ROOT_PANEL_ID, "Hidden", false);
+    menuVisible = true;
     resetMenuChrome(layout);
     refreshInputCapture();
 
@@ -107,9 +112,14 @@ export const onRoundStart = (): void => {
 
     if (getGameHasStarted()) {
         layout.SetHasClass(ROOT_PANEL_ID, "Hidden", true);
-    } else {
+        menuVisible = false;
+    } else if (!menuVisible) {
+        // Only reset the chrome (active tab, start button/spinner state) the first time the menu
+        // reappears after being hidden. Warmup round-starts fire repeatedly while the lobby is up -
+        // without this guard, every one of them would yank the host back to the Map tab mid-click.
         layout.SetHasClass(ROOT_PANEL_ID, "Hidden", false);
         resetMenuChrome(layout);
+        menuVisible = true;
     }
     refreshInputCapture();
 };
@@ -133,6 +143,7 @@ const onStartGameClicked = (layout: CustomHudLayout): void => {
     // it runs out, the spinner takes over as the fallback "still loading" indicator.
     beginGame(() => {
         layout.SetHasClass(ROOT_PANEL_ID, "Hidden", true);
+        menuVisible = false;
     });
 
     // beginGame() sets gameHasStarted synchronously, before the chosen map finishes loading -

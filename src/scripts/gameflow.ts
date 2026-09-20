@@ -24,6 +24,14 @@ export const beginGame = (onStarted: () => void): void => {
         // issues mp_restartgame 1 (which is what actually moves players to their new team's spawns).
         timers.setTimeout(() => {
             startgame.onStartGame();
+            // mp_restartgame's own round-restart handling can re-evaluate bot teams on its own
+            // (independent of mp_autoteambalance, which only governs rebalancing already-teamed
+            // players), sometimes silently pulling a bot back onto a different team than the one
+            // JoinTeam() just put it on above. Re-apply the intended teams once the restart has
+            // had a moment to settle so any bot drift gets corrected back.
+            timers.setTimeout(() => {
+                teamconfiguration.onStartGame();
+            }, 0.5);
             onStarted();
         }, 1);
     });

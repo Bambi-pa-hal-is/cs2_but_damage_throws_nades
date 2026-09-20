@@ -138,7 +138,7 @@
 						<Panel class="RuleRow Paired Last">
 							<Label class="RuleLabel" text="Chance to throw when shooting" />
 							<Panel class="Stepper">
-								<Button id="rule_shoot_chance_dec" class="StepButton"><Label text="-" /></Button>
+								<Button id="rule_shoot_chance_dec" class="StepButton StepButtonMinus"><Label text="&#8722;" /></Button>
 								<Panel id="rule_shoot_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
 								<Button id="rule_shoot_chance_inc" class="StepButton"><Label text="+" /></Button>
 							</Panel>
@@ -152,7 +152,7 @@
 						<Panel class="RuleRow Paired Last">
 							<Label class="RuleLabel" text="Chance to throw when dealing damage" />
 							<Panel class="Stepper">
-								<Button id="rule_damage_chance_dec" class="StepButton"><Label text="-" /></Button>
+								<Button id="rule_damage_chance_dec" class="StepButton StepButtonMinus"><Label text="&#8722;" /></Button>
 								<Panel id="rule_damage_chance_value" class="StepValue"><Label text="{s:value}" /></Panel>
 								<Button id="rule_damage_chance_inc" class="StepButton"><Label text="+" /></Button>
 							</Panel>
@@ -163,7 +163,7 @@
 						<Panel class="RuleRow Paired Last">
 							<Label class="RuleLabel" text="Player health" />
 							<Panel class="Stepper">
-								<Button id="rule_health_dec" class="StepButton"><Label text="-" /></Button>
+								<Button id="rule_health_dec" class="StepButton StepButtonMinus"><Label text="&#8722;" /></Button>
 								<Panel id="rule_health_value" class="StepValue"><Label text="{s:value}" /></Panel>
 								<Button id="rule_health_inc" class="StepButton"><Label text="+" /></Button>
 							</Panel>
@@ -224,6 +224,10 @@
 				</Panel>
 			</Panel>
 		</Panel>
+	</Panel>
+
+	<Panel id="rtv_hint" class="RtvHint Hidden">
+		<Label id="rtv_hint_text" class="RtvHintText" text="{s:text}" />
 	</Panel>
 	</Panel>
 </root>
