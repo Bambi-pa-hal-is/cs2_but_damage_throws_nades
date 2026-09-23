@@ -1,8 +1,0 @@
-<root>
-	<styles>
-		<include src="file://{resources}/styles/custom_game/main_menu.css" />
-	</styles>
-
-	<Panel class="Root">
-    </Panel>
-</root>

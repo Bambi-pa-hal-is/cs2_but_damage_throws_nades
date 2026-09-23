@@ -15,7 +15,7 @@
  * - Create a JavaScript file (.js) that imports this module.
  *      - See `hello.js` for an example.
  * - Create a point_script entity in your map and set its cs_script field to reference your JavaScript file as a vjs asset.
- *      - See `script_zoo.vmap`. There is a point_script entity in there named "hello_cs_script" that runs `hello.js`. There are a handful of other examples as well.
+ *      - See example addon cs_script_demo. There is a point_script entity in the cs_script_demo.vmap named "hello_cs_script" that runs `hello.js`. There are a handful of other examples as well.
  * 
  * # Execution:
  * - The compiled version of your script (.vjs_c) will be loaded during map load.
@@ -85,8 +85,6 @@ declare module "cs_script/point_script"
          * This can be useful for delaying until a clean moment when an entity isn't mid-computation and might ignore or misinterpret.
          * This can be useful for delaying until the world is in a consistent state.
          * Callbacks queued up during a post entity think callback will be invoked in the same tick.
-         * @experimental This method is experimental and may experience breaking changes.
-         * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
          */
         QueueAfterThinks( callback: () => void ): void;
 
@@ -103,15 +101,13 @@ declare module "cs_script/point_script"
         OnPlayerDisconnect(callback: (event: { playerSlot: number }) => void): void;
         /** Called when a player respawns, changes team, or is placed back at spawn due to a round restart */
         OnPlayerReset(callback: (event: { player: CSPlayerPawn }) => void): void
+        /** Called when a player changes team */
+        OnPlayerTeamChanged(callback: (event: { player: CSPlayerPawn, oldTeam: number }) => void): void
         /** Called when a new round begins */
         OnRoundStart(callback: () => void): void;
         /** Called when a team wins a round */
         OnRoundEnd(callback: (event: { winningTeam: number, reason: CSRoundEndReason }) => void): void;
-        /**
-         * Called at the start of cleanup for a round restart
-         * @experimental This method is experimental and may experience breaking changes.
-         * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
-         */
+        /** Called at the start of cleanup for a round restart */
         OnBeginRoundRestart(callback: () => void): void;
         /** Called when a player starts planting their c4 */
         OnBombPlantStart(callback: (event: { planter: CSPlayerPawn }) => void): void;
@@ -215,6 +211,8 @@ declare module "cs_script/point_script"
         IsWarmupPeriod(): boolean;
         /** Get if the game is currently in a Freeze period. */
         IsFreezePeriod(): boolean;
+        /** Get if the game is currently in a Team Intro period. */
+        IsTeamIntroPeriod(): boolean;
         /** Get the current Game Type. */
         GetGameType(): number;
         /** Get the current Game Mode. */
@@ -227,6 +225,16 @@ declare module "cs_script/point_script"
         GetRoundRemainingTime(): number;
         /** Set the time remaining in the current round in seconds. */
         SetRoundRemainingTime(time: number): void;
+
+        /**
+         * Adds the money to all player controllers on the team, following all classic rules.
+         * If players are not eligible to receive end-of-round money, then that restriction is honored.
+         * Disconnected players will get their account balance incremented, and will have correct
+         * amount of money after they reconnect to the server.
+         * If the `amount` parameter is 0 or undefined, then the amount will be determined using server convar
+         * setting corresponding to the reason parameter.
+         */
+        AddTeamMoney(team: number, reason: CSTeamMoneyReason, amount?: number): void;
 
         /** Spawns a live grenade projectile. */
         SpawnGrenadeProjectile(config: SpawnGrenadeProjectileConfig): CSGrenadeProjectileBase;
@@ -271,14 +279,20 @@ declare module "cs_script/point_script"
         INVALID = -1,
         NONE,
         WALK,
-        FLY,
         FLYGRAVITY,
         VPHYSICS,
-        PUSH,
         NOCLIP,
         OBSERVER,
         LADDER,
         CUSTOM,
+    }
+
+    export enum CSObserverMode {
+        NONE,
+        FIXED,
+        IN_EYE,
+        CHASE,
+        ROAMING,
     }
 
     export enum CSRoundEndReason {
@@ -295,6 +309,55 @@ declare module "cs_script/point_script"
         TERRORISTS_WIN,
         CTS_SURRENDER,
         TERRORISTS_SURRENDER,
+    }
+
+    export enum CSRadarIcon {
+        TOWER = 0,
+        C4 = 1,
+        HOSTAGE = 2,
+    }
+
+    export enum CSRadarColor {
+        PLAYERHUD = 0,
+        GRAY = 1,
+        WHITE = 2,
+        CT = 3,
+        T = 4,
+        RED = 5,
+        GREEN = 6,
+    }
+
+    export enum CSTeamMoneyReason {
+        /** $0 */
+        NONE,
+        /** cash_team_terrorist_win_bomb */
+        TERRORIST_WIN_BOMB,
+        /** cash_team_elimination_hostage_map_t */
+        ELIMINATION_HOSTAGE_MAP_T,
+        /** cash_team_elimination_hostage_map_ct */
+        ELIMINATION_HOSTAGE_MAP_CT,
+        /** cash_team_elimination_bomb_map */
+        ELIMINATION_BOMB_MAP,
+        /** cash_team_win_by_time_running_out_hostage */
+        WIN_BY_TIME_RUNNING_OUT_HOSTAGE,
+        /** cash_team_win_by_time_running_out_bomb */
+        WIN_BY_TIME_RUNNING_OUT_BOMB,
+        /** cash_team_win_by_defusing_bomb */
+        WIN_BY_DEFUSING_BOMB,
+        /** cash_team_win_by_hostage_rescue */
+        WIN_BY_HOSTAGE_RESCUE,
+        /** cash_team_loser_bonus */
+        LOSER_BONUS,
+        /** cash_team_rescued_hostage */
+        RESCUED_HOSTAGE,
+        /** cash_team_hostage_alive */
+        HOSTAGE_ALIVE,
+        /** cash_team_planted_bomb_but_defused */
+        PLANTED_BOMB_BUT_DEFUSED,
+        /** cash_team_hostage_interaction */
+        HOSTAGE_INTERACTION,
+        /** cash_team_bonus_shorthanded */
+        BONUS_SHORTHANDED,
     }
 
     export enum CSWeaponType {
@@ -454,7 +517,7 @@ declare module "cs_script/point_script"
         damage?: number,
         /** The exponential damage drop off constant from traveling through air. @default .85 */
         rangeModifier?: number,
-        /** The power to maintain damage during penetration. Will default to 1 if left unspecified. @default 1 */
+        /** The power to maintain damage during penetration. Will default to 1 if left undefined. @default 1 */
         penetration?: number,
     }
 
@@ -733,6 +796,25 @@ declare module "cs_script/point_script"
         GetDefuseFinishTime(): number | undefined;
     }
 
+    /**
+     * An entity that displays an icon on radar and overview map.
+     */
+    export class CSRadarPoint extends Entity {
+        SetIcon( icon: CSRadarIcon ): void;
+        SetColor( color: CSRadarColor ): void;
+        IsVisibleToTeam( team: number ): boolean;
+        SetVisibleToTeam( team: number, visible: boolean ): void;
+    }
+
+    /**
+     * An entity that can be observed when no alive teammates remain.
+     */
+    export class CSObservablePoint extends Entity {
+        SetObservableModelEntity(entmodel: Entity | undefined, index?: number): void;
+        IsObservableForTeam( team: number ): boolean;
+        SetObservableForTeam( team: number, observable: boolean ): void;
+    }
+
     export class CSPlayerController extends Entity {
         GetPlayerSlot(): number;
         GetPlayerName(): string;
@@ -759,8 +841,12 @@ declare module "cs_script/point_script"
         GetPlayerController(): CSPlayerController | undefined;
         /** Gets the controller that this player pawn was originally spawned for. */
         GetOriginalPlayerController(): CSPlayerController;
-        GetObserverMode(): number;
-        SetObserverMode(nMode: number): void;
+        GetObserverMode(): CSObserverMode;
+        SetObserverMode(mode: CSObserverMode): void;
+        GetObserverTarget(): Entity | undefined;
+        /** @returns `false` if `target` is an invalid value. */
+        SetObserverTarget(target: Entity | undefined): boolean;
+        SetEyeAngles(angle: QAngle): void;
     }
 
     export class CSPlayerPawn extends BaseModelEntity {
@@ -774,6 +860,7 @@ declare module "cs_script/point_script"
         WasInputJustPressed(inputs: CSInputs): boolean;
         /** @returns `true` if specified inputs went from pressed to released at some point during the current tick. */
         WasInputJustReleased(inputs: CSInputs): boolean;
+        SetEyeAngles(angle: QAngle): void;
         FindWeapon(name: string): CSWeaponBase | undefined;
         FindWeaponBySlot(slot: CSGearSlot): CSWeaponBase | undefined;
         GetActiveWeapon(): CSWeaponBase | undefined;
@@ -795,7 +882,7 @@ declare module "cs_script/point_script"
         IsScoped(): boolean;
         IsNoclipping(): boolean;
         IsBuyMenuOpen(): boolean;
-        GetCamera(): CSPlayerCamera;
+        GetCustomCamera(): CustomPlayerCamera;
 
         /** @deprecated This method will be removed in a future update */
         IsCrouching(): boolean;
@@ -805,13 +892,27 @@ declare module "cs_script/point_script"
 
     /**
      * CustomHudLayouts (custom_hud_layout) are the entry point for scripted maps to provide custom UI.
-     * Supported panel types and attributes are:
-     * * <Panel> with attributes id, class and hittest
-     * * <Label> with attributes id, class, hittest, and text
-     * * <Image> with attributes id, class, hittest, src, texturewidth, and textureheight
-     * * <Button> with attributes id and class
-     * Styling with css is supported.
-     * Events and client side scripting are not supported.
+     * * Supported panel types and attributes are:
+     *   * <Panel> with attributes id, class and hittest
+     *   * <Label> with attributes id, class, hittest, and text
+     *   * <Image> with attributes id, class, hittest, and src
+     *   * <Button> with attributes id and class
+     * * Styling with css is supported.
+     * * The following css classes will be set on an ancestor panel when appropriate:
+     *   * `HUD_TEAMINTRO_VISIBLE`
+     *   * `HUD_BUYMENU_VISIBLE`
+     *   * `HUD_SCOREBOARD_VISIBLE`
+     *   * `HUD_WINPANEL_VISIBLE`
+     *   * `HUD_ENDOFMATCH_VISIBLE`
+     * * Events and client side scripting are not supported.
+     * 
+     * To use
+     * * Add a panorama layout .xml file under "panorama/layout/custom_game" in your addon
+     * * Add a custom_hud_layout point entity to your map and point its `layout` property at your .vxml asset.
+     * * See example addon cs_script_demo
+     *   * There is a custom_hud_layout entity in the cs_script_demo.vmap named "welcome_layout" that displays "panorama/layouts/custom_game/welcome.vxml".
+     *   * It also references css file `panorama/styles/custom_game/welcome.css`. (vcss is the asset extension)
+     *   * The layout begins with a "Dismissed" class on the Panel with id "dialog" which is then removed in cs_script file "maps/scripts/setup.js".
      * @experimental This feature is experimental and may experience breaking changes.
      * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
      */
@@ -846,22 +947,57 @@ declare module "cs_script/point_script"
          * Get if this CustomHudLayout is capturing input for a player
          */
         IsInputCaptureEnabled(playerSlot: number): boolean;
+        /**
+         * Reset to original state for all players.
+         */
+        Reset(): void;
+        /**
+         * Reset a single player's overrides to their original state.
+         */
+        ResetForPlayer(playerSlot: number): void;
     }
 
     export class PointTemplate extends Entity {
         ForceSpawn(origin?: Vector, angle?: QAngle): Entity[] | undefined;
     }
 
+    export enum CustomCameraMode {
+        /** Position and angles come from the eye position and angles of the player. */
+        DISABLED = 0,
+        /** Position and angles come from the origin and angles of the camera entity. */
+        CONTROLLED = 1,
+        /** Position comes from the origin of camera entity. Angles are player controlled. */
+        CONTROLLED_POSITION = 2,
+        /** Position comes from an offset around a followed position. Angles are player controlled. */
+        FOLLOW_POSITION = 3
+    }
+
+    interface CameraFollowConfig {
+        /** The entity to follow */
+        followEntity: Entity;
+        /** Should followOffset be an offset from the eyes instead of the origin */
+        followEyes?: boolean;
+        /** An offset from the origin (or eyes) of followEntity to follow */
+        followOffset?: Vector;
+        /** An offset from the followed position rotated by player's eye angles. x is forward, y is left, z is up. */
+        cameraOffset?: Vector;
+        /** Should cameraOffset be pulled in to not clip into solids. */
+        clipCameraOffset?: boolean;
+        /** Strength of returning the camera to cameraOffset after being pushed in by clipping. Defaults to 1; instant. */
+        cameraOffsetReturnStrength?: number;
+    }
+
     /**
-     * Move this to control a player's view without moving their pawn.
+     * Configuration of a player's view position and angles.
+     * There is at most one of these per CSPlayerPawn, created on demand when CSPlayerPawn.GetCustomCamera is called.
      * @experimental This feature is experimental and may experience breaking changes.
      * Please send feedback to CSGOTeamFeedback@valvesoftware.com with "cs_script Feedback" in the subject line.
      */
-    export class CSPlayerCamera extends Entity {
-        IsEnabled(): boolean;
-        SetEnabled(enabled: boolean): void;
-        /** Set to false let a player look around from the camera's position. */
-        SetIsControllingAngles(controlling: boolean): void;
+    export class CustomPlayerCamera extends Entity {
+        GetPlayer(): CSPlayerPawn;
+        GetMode(): CustomCameraMode;
+        SetMode(mode: CustomCameraMode): void;
+        SetFollowConfig(followConfig: CameraFollowConfig): void;
     }
 
     /** @deprecated This enum will be removed in a future update */

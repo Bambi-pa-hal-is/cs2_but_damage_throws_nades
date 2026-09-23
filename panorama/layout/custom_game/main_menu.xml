@@ -33,55 +33,55 @@
 			<Panel id="panel_map" class="TabPanel">
 				<Panel class="MapGrid">
 					<Button id="map_de_ancient" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient" /></Panel>
 					</Button>
 					<Button id="map_de_ancient_night" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient_night.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient_night.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient Night" /></Panel>
 					</Button>
 					<Button id="map_de_anubis" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_anubis.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_anubis.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Anubis" /></Panel>
 					</Button>
 					<Button id="map_de_cache" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_cache.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_cache.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Cache" /></Panel>
 					</Button>
 					<Button id="map_de_dust2" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_dust2.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_dust2.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Dust2" /></Panel>
 					</Button>
 					<Button id="map_de_inferno" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_inferno.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_inferno.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Inferno" /></Panel>
 					</Button>
 					<Button id="map_cs_italy" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_italy.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_italy.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Italy" /></Panel>
 					</Button>
 					<Button id="map_de_mirage" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_mirage.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_mirage.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Mirage" /></Panel>
 					</Button>
 					<Button id="map_de_nuke" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_nuke.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_nuke.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Nuke" /></Panel>
 					</Button>
 					<Button id="map_cs_office" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_office.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_office.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Office" /></Panel>
 					</Button>
 					<Button id="map_de_overpass" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_overpass.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_overpass.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Overpass" /></Panel>
 					</Button>
 					<Button id="map_de_train" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_train.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_train.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Train" /></Panel>
 					</Button>
 					<Button id="map_de_vertigo" class="MapCard">
-						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_vertigo.jpg" texturewidth="256" textureheight="144" />
+						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_vertigo.jpg" />
 						<Panel class="MapCardFooter"><Label class="MapName" text="Vertigo" /></Panel>
 					</Button>
 				</Panel>

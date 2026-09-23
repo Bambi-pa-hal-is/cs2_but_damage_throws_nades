@@ -6,10 +6,11 @@ let gameHasStarted = false;
 
 export const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
 
-// info_player_counterterrorist has no Enable/Disable input, only toggleenabled, and every spawn
-// starts enabled by default. Toggling isn't idempotent, so we track the current enabled state
-// ourselves and only fire the toggle when it actually needs to flip. Terrorist spawns are
-// deliberately never toggled - see forceRealPlayersOffT()/OnPlayerReset below for why.
+// info_player_counterterrorist and info_player_terrorist have no Enable/Disable input, only
+// toggleenabled, and every spawn starts enabled by default. Toggling isn't idempotent, so we track
+// the current enabled state ourselves and only fire the toggle when it actually needs to flip.
+// Both the CT and T lobby spawns share CONFIGURATION_SPAWN_NAME, so a single toggle flips them all
+// and only the loaded map's own spawns remain once the game has started.
 let configurationSpawnsEnabled = true;
 
 let players: CSPlayerController[] = [];

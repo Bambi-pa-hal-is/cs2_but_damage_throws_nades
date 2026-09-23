@@ -17,7 +17,7 @@
 // the game, baseline ones included. Sanity-check the "kept N / removed M" Msg output on a small
 // scale before ever wiring this into a real reset flow.
 
-import { CSObserverPawn, CSPlayerCamera, CSPlayerController, CSPlayerPawn, Entity, Instance } from "cs_script/point_script";
+import { CSObserverPawn, CSPlayerController, CSPlayerPawn, CustomPlayerCamera, Entity, Instance } from "cs_script/point_script";
 import { setTimeout } from "../shared/timers";
 import { persistOnReload } from "../shared/persist";
 
@@ -30,7 +30,7 @@ const isProtected = (entity: Entity): boolean =>
     entity instanceof CSPlayerController
     || entity instanceof CSPlayerPawn
     || entity instanceof CSObserverPawn
-    || entity instanceof CSPlayerCamera;
+    || entity instanceof CustomPlayerCamera;
 
 /**
  * Snapshots every entity that currently exists. Call this right before the first spawn_group_load.
