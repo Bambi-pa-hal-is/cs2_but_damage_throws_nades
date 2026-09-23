@@ -20,6 +20,7 @@
 import { CSObserverPawn, CSPlayerController, CSPlayerPawn, CustomPlayerCamera, Entity, Instance } from "cs_script/point_script";
 import { setTimeout } from "../shared/timers";
 import { persistOnReload } from "../shared/persist";
+import { disableMinimap } from "./minimap";
 
 let baseline: Set<Entity> | undefined;
 
@@ -91,6 +92,9 @@ persistOnReload("mapReset", {
 
 /** Prunes to baseline, then issues spawn_group_unload for the given map - the full "unload" sequence. */
 export const unloadMap = (mapName: string): void => {
+    // The minimap volumes live in the lobby level (so they're part of the baseline and survive the
+    // prune) - switch this map's off so it doesn't linger over the next map loaded in the same spot.
+    disableMinimap(mapName);
     pruneToBaseline();
     // setTimeout's delay is in seconds (game time), not ms - this is 0.5s, giving Remove()'d
     // entities a moment to actually get cleaned up before spawn_group_unload runs.

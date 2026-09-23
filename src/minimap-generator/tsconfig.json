@@ -1,0 +1,18 @@
+{
+  // Node tooling, run directly by Node's built-in type stripping (`node index.ts`), so only
+  // erasable TypeScript syntax is allowed and imports keep their .ts extensions.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "noEmit": true,
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["./**/*.ts"]
+}

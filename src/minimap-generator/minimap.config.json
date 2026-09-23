@@ -1,0 +1,25 @@
+{
+    "levelName": "but_damage_throws_nades",
+    "namePrefix": "dynamic_minimap_",
+    "outputFile": "maps/prefabs/dynamic_minimap.vmap",
+    "zMin": -16000,
+    "zMax": 16000,
+    "entities": [
+        { "minimapName": "de_dust2", "posX": -2476, "posY": 3239, "scale": 4.4 },
+        { "minimapName": "de_inferno", "posX": -2087, "posY": 3870, "scale": 4.9 },
+        { "minimapName": "de_mirage", "posX": -3230, "posY": 1713, "scale": 5 },
+        { "minimapName": "de_overpass", "posX": -4831, "posY": 1781, "scale": 5.2 },
+        { "minimapName": "de_ancient", "posX": -2953, "posY": 2164, "scale": 5 },
+        { "minimapName": "de_ancient_night", "posX": -2953, "posY": 2164, "scale": 5 },
+        { "minimapName": "de_anubis", "posX": -2796, "posY": 3328, "scale": 5.22 },
+        { "minimapName": "de_cache", "posX": -2000, "posY": 3250, "scale": 5.5 },
+        { "minimapName": "cs_office", "posX": -1838, "posY": 1858, "scale": 4.1 },
+        { "minimapName": "cs_italy", "posX": -2647, "posY": 2592, "scale": 4.6 },
+        { "minimapName": "de_nuke", "posX": -3453, "posY": 2887, "scale": 7, "zMin": -495 },
+        { "minimapName": "de_nuke_lower", "posX": -3453, "posY": 2887, "scale": 7, "zMax": -495 },
+        { "minimapName": "de_train", "posX": -2308, "posY": 2078, "scale": 4.082077, "zMin": -50 },
+        { "minimapName": "de_train_lower", "posX": -2308, "posY": 2078, "scale": 4.082077, "zMax": -50 },
+        { "minimapName": "de_vertigo", "posX": -3168, "posY": 1762, "scale": 4, "zMin": 11700 },
+        { "minimapName": "de_vertigo_lower", "posX": -3168, "posY": 1762, "scale": 4, "zMax": 11700 }
+    ]
+}

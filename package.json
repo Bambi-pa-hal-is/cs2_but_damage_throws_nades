@@ -7,14 +7,16 @@
     "build": "tsc --noEmit && node build.mjs",
     "watch": "node build.mjs --watch",
     "dev": "node build.mjs --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p src/minimap-generator",
     "typecheck:watch": "tsc --noEmit --watch",
     "copy-cfgs": "node copy-cfgs.mjs",
     "copy-loadingscreen": "node copy-loadingscreen.mjs",
     "copy-addoninfo": "node copy-addoninfo.mjs",
-    "update-types": "node update-types.mjs"
+    "update-types": "node update-types.mjs",
+    "update-minimap": "node src/minimap-generator/index.ts"
   },
   "devDependencies": {
+    "@types/node": "^24.13.6",
     "esbuild": "^0.28.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"

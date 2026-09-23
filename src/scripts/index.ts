@@ -1,9 +1,9 @@
 import { Instance } from "cs_script/point_script";
 import * as mapselect from "./mapselect";
+import * as minimap from "./minimap";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
 import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
-import * as welcomeHud from "./welcomeHud";
 import * as mainMenu from "./mainMenu";
 import * as rockthevote from "./rockthevote";
 import * as rtvHint from "./rtvHint";
@@ -28,7 +28,6 @@ Instance.OnPlayerConnect((event) => {
 // registered per event name, so each module that needs OnPlayerActivate gets called from here.
 Instance.OnPlayerActivate((event) => {
     teamconfiguration.onPlayerActivate(event);
-    welcomeHud.onPlayerActivate(event);
     mainMenu.onPlayerActivate(event);
 });
 
@@ -49,7 +48,6 @@ Instance.OnPlayerChat((event) => {
 // Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
 // registered per event name, so each module with a custom_hud_layout gets called from here.
 Instance.OnCustomHudClicked((event) => {
-    welcomeHud.onCustomHudClicked(event);
     mainMenu.onCustomHudClicked(event);
 });
 
@@ -64,6 +62,7 @@ Instance.OnActivate(() => {
 
 Instance.OnRoundStart(() => {
     mapselect.onRoundStart();
+    minimap.onRoundStart();
     startgame.onRoundStart();
     throwNadesOnDamageUi.onRoundStart();
     teamconfiguration.onRoundStart();

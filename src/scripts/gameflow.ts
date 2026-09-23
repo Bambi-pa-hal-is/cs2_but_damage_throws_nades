@@ -1,6 +1,7 @@
 import { Instance } from "cs_script/point_script";
 import { getGameHasStarted, setGameHasStarted } from "../shared/gamestate";
 import * as mapselect from "./mapselect";
+import * as minimap from "./minimap";
 import * as startgame from "./startgame";
 import * as teamconfiguration from "./teamconfiguration";
 import * as timers from "../shared/timers";
@@ -19,6 +20,7 @@ export const beginGame = (onStarted: () => void): void => {
         input: "Disable",
     });
     mapselect.onStartGame(() => {
+        minimap.enableMinimap(mapselect.getSelectedMap());
         teamconfiguration.onStartGame();
         // Give the JoinTeam() calls a moment to actually take effect before startgame.onStartGame()
         // issues mp_restartgame 1 (which is what actually moves players to their new team's spawns).
