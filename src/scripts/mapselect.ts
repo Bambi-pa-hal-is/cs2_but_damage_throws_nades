@@ -4,6 +4,7 @@ import { getGameHasStarted, CONFIGURATION_SPAWN_NAME } from "../shared/gamestate
 import { getMainMenuLayout } from "../shared/hud";
 import * as timers from "../shared/timers";
 import * as mapReset from "./mapReset";
+import { isVoteMode } from "./hostControl";
 
 const maps = [
     "de_overpass",
@@ -27,11 +28,15 @@ let selectedMap = maps[Math.floor(Math.random() * maps.length)];
 
 export const getSelectedMap = (): string => selectedMap;
 
+export const getMaps = (): readonly string[] => maps;
+
 const highlightMapButton = (selectedMap: string) => {
     const layout = getMainMenuLayout();
     for (let i = 0; i < maps.length; i++) {
         const map = maps[i];
-        layout?.SetHasClass(MAP_BUTTON_ID_PREFIX + map, "Selected", map === selectedMap);
+        // In vote mode there's no single selection to show - mapvote.ts highlights each player's
+        // own vote instead.
+        layout?.SetHasClass(MAP_BUTTON_ID_PREFIX + map, "Selected", !isVoteMode() && map === selectedMap);
     }
 };
 
@@ -39,7 +44,7 @@ const highlightSelectedMap = () => {
     highlightMapButton(selectedMap);
 };
 
-// Called by mainMenu.ts when the host (playerController[0]) clicks a map card in the HUD.
+// Called by mainMenu.ts when the host clicks a map card in the HUD, or once a map vote finishes.
 export const selectMap = (mapName: string): void => {
     if (!maps.includes(mapName) || mapName === selectedMap) return;
     selectedMap = mapName;

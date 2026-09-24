@@ -268,6 +268,13 @@
 	border-radius: 0px 0px 9px 9px;
 }
 
+.MapCardText {
+	width: 100%;
+	flow-children: down;
+	horizontal-align: center;
+	vertical-align: center;
+}
+
 .MapName {
 	color: #e8e8e8;
 	font-size: 17px;
@@ -275,6 +282,24 @@
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
+}
+
+/* Vote count + voter names - only shown in vote mode, once the map has at least one vote. */
+.MapVotes {
+	width: 100%;
+	padding: 0px 8px;
+	margin-top: 2px;
+	color: #e8a33d;
+	font-size: 12px;
+	letter-spacing: 1px;
+	text-align: center;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	visibility: collapse;
+}
+
+.MapCard.HasVotes .MapVotes {
+	visibility: visible;
 }
 
 .MapCard.Selected .MapCardFooter {
@@ -630,6 +655,12 @@
 	transform: scale3d(1.03, 1.03, 1.0);
 }
 
+/* Vote mode: the button is a read-only countdown, so it shouldn't react to hover. */
+.StartButton.VoteMode:hover {
+	background-color: #e8a33d;
+	transform: scale3d(1.0, 1.0, 1.0);
+}
+
 .StartButton.Disabled {
 	background-color: #2b3540;
 }
@@ -647,6 +678,14 @@
 	text-align: center;
 	horizontal-align: center;
 	vertical-align: center;
+}
+
+.StartButton.VoteMode .StartLabel {
+	font-size: 16px;
+}
+
+.StartButton.Disabled .StartLabel {
+	color: #cfd6dc;
 }
 
 .Spinner {

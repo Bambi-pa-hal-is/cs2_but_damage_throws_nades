@@ -7,3 +7,11 @@ export const playSound = (entityName: string): void => {
         input: "startsound",
     });
 };
+// Same as playSound, but only the player in `playerSlot` hears it.
+export const playSoundForPlayer = (entityName: string, playerSlot: number): void => {
+    Instance.EntFireAtName({
+        name: entityName,
+        input: "StartSoundOnSingleClient",
+        value: playerSlot,
+    });
+};

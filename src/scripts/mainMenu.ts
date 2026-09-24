@@ -4,12 +4,14 @@ import { getGameHasStarted } from "../shared/gamestate";
 import * as mapselect from "./mapselect";
 import * as teamconfiguration from "./teamconfiguration";
 import * as rules from "./throwNadesOnDamageUi";
+import * as mapvote from "./mapvote";
 import { beginGame } from "./gameflow";
+import { getHostSlot, isVoteMode } from "./hostControl";
 import * as timers from "../shared/timers";
 
-// "playerController[0]" - only whoever currently occupies player slot 0 may interact with the menu.
-// Everyone else still sees it (it's never hidden for them), they just can't click into it.
-const HOST_PLAYER_SLOT = 0;
+// Only the host (see hostControl.ts) may configure the match - everyone else still sees the menu,
+// they just can't click into it. With no host (vote mode), every player can click, but only to
+// vote on the map and browse the tabs.
 
 const ROOT_PANEL_ID = "main_menu_root";
 const START_BUTTON_ID = "start_game_button";
@@ -18,6 +20,9 @@ const FOOTER_BAR_ID = "footer_bar";
 const TAB_BAR_ID = "tab_bar";
 const COUNTDOWN_VALUE_ID = "countdown_value";
 const COUNTDOWN_SECONDS = 3;
+const FOOTER_HINT_ID = "footer_hint";
+const HOST_HINT = "Configure the rules, then start when ready.";
+const VOTE_HINT = "Click a map to vote for it - you can change your vote until the match starts. Default rules apply.";
 
 // Bumped every time a countdown (real or previewed) starts, so a stale recursive timer chain from
 // a superseded run can tell it's been superseded and stop instead of fighting over the HUD.
@@ -48,27 +53,80 @@ const setActiveTab = (layout: CustomHudLayout, tab: Tab): void => {
     layout.SetHasClass(FOOTER_BAR_ID, "Hidden", tab === "starting");
 };
 
-// Grants input capture (cursor + click detection) to whichever player currently occupies slot 0,
-// and explicitly revokes it from everyone else. Also revoked from everyone once the game has
+// Vote mode: every player browses the tabs on their own, so a tab click only switches it for
+// whoever clicked. Never used for the starting tab, so the footer stays global.
+const setActiveTabForPlayer = (layout: CustomHudLayout, playerSlot: number, tab: Tab): void => {
+    for (const key of Object.keys(TAB_PANEL_ID) as Tab[]) {
+        layout.SetHasClassForPlayer(playerSlot, TAB_PANEL_ID[key], "Hidden", key !== tab);
+        layout.SetHasClassForPlayer(playerSlot, TAB_BUTTON_ID[key], "Active", key === tab);
+    }
+};
+
+// Drops every setActiveTabForPlayer() override so the global setActiveTab() state shows again.
+const clearPlayerTabOverrides = (layout: CustomHudLayout): void => {
+    for (const controller of Instance.GetAllPlayerControllers()) {
+        const slot = controller.GetPlayerSlot();
+        for (const key of Object.keys(TAB_PANEL_ID) as Tab[]) {
+            layout.SetHasClassForPlayer(slot, TAB_PANEL_ID[key], "Hidden");
+            layout.SetHasClassForPlayer(slot, TAB_BUTTON_ID[key], "Active");
+        }
+    }
+};
+
+// Grants input capture (cursor + click detection) to the host, or to every real player in vote
+// mode, and explicitly revokes it from everyone else. Also revoked from everyone once the game has
 // started, since the menu is hidden at that point anyway.
 export const refreshInputCapture = (): void => {
     const layout = getMainMenuLayout();
     if (!layout) return;
 
     const started = getGameHasStarted();
+    const hostSlot = getHostSlot();
     for (const controller of Instance.GetAllPlayerControllers()) {
         const slot = controller.GetPlayerSlot();
-        layout.SetInputCaptureEnabled(slot, !started && slot === HOST_PLAYER_SLOT);
+        const canInteract = hostSlot === undefined ? !controller.IsBot() : slot === hostSlot;
+        layout.SetInputCaptureEnabled(slot, !started && canInteract);
     }
+};
+
+// Footer hint + Start Game button for the current control mode. In vote mode the button is a
+// read-only countdown owned by mapvote.ts.
+const renderControlMode = (layout: CustomHudLayout): void => {
+    const voteMode = isVoteMode();
+    layout.SetDialogVariableString(FOOTER_HINT_ID, "hint", voteMode ? VOTE_HINT : HOST_HINT);
+
+    if (voteMode) {
+        mapvote.render();
+    } else {
+        layout.SetHasClass(START_BUTTON_ID, "VoteMode", false);
+        layout.SetHasClass(START_BUTTON_ID, "Disabled", realStartTriggered);
+        layout.SetDialogVariableString(START_BUTTON_ID, "label", "START GAME");
+    }
+
+    mapselect.renderHud();
+    refreshInputCapture();
+};
+
+// Called when but_set_host picks a host, or when that host disconnects again.
+export const onControlModeChanged = (): void => {
+    const layout = getMainMenuLayout();
+    if (!layout) return;
+
+    // A host taking over ends any vote in progress - they pick the map from here on.
+    if (!isVoteMode()) mapvote.reset();
+    clearPlayerTabOverrides(layout);
+    renderControlMode(layout);
 };
 
 const resetMenuChrome = (layout: CustomHudLayout): void => {
     realStartTriggered = false;
     countdownGeneration++;
+    mapvote.reset();
+    clearPlayerTabOverrides(layout);
     setActiveTab(layout, "map");
     layout.SetHasClass(TAB_BAR_ID, "Hidden", false);
-    layout.SetHasClass(START_BUTTON_ID, "Disabled", false);
     layout.SetHasClass(START_SPINNER_ID, "Hidden", true);
+    renderControlMode(layout);
 };
 
 // Counts down from COUNTDOWN_SECONDS to 1 (one second per step), then calls onComplete. `generation`
@@ -99,9 +157,7 @@ export const onActivate = (): void => {
     layout.SetHasClass(ROOT_PANEL_ID, "Hidden", false);
     menuVisible = true;
     resetMenuChrome(layout);
-    refreshInputCapture();
 
-    mapselect.renderHud();
     teamconfiguration.renderHud();
     rules.renderRules();
 };
@@ -130,10 +186,12 @@ export const onPlayerActivate = (_event: { player: CSPlayerController }): void =
     refreshInputCapture();
 };
 
-const onStartGameClicked = (layout: CustomHudLayout): void => {
+// Shared by the host's Start Game button and the end of a map vote.
+const startMatch = (layout: CustomHudLayout): void => {
     if (getGameHasStarted() || realStartTriggered) return;
     realStartTriggered = true;
 
+    clearPlayerTabOverrides(layout);
     layout.SetHasClass(START_BUTTON_ID, "Disabled", true);
     layout.SetHasClass(TAB_BAR_ID, "Hidden", true);
     setActiveTab(layout, "starting");
@@ -155,6 +213,13 @@ const onStartGameClicked = (layout: CustomHudLayout): void => {
     });
 };
 
+mapvote.setOnVoteFinished((winningMap) => {
+    const layout = getMainMenuLayout();
+    if (!layout) return;
+    mapselect.selectMap(winningMap);
+    startMatch(layout);
+});
+
 // Lets the host preview the countdown by clicking the Starting tab directly, without it actually
 // beginning the game - a no-op if a real start is already in progress (that tab just gets shown
 // as-is then, rather than restarting/overriding the real countdown with a preview one).
@@ -167,14 +232,29 @@ const previewStartingTab = (layout: CustomHudLayout): void => {
 
 // Exported instead of self-registered via Instance.OnCustomHudClicked - only one callback can be
 // registered per event name, and index.ts owns the shared OnCustomHudClicked dispatch.
+// Vote mode clicks: tabs switch per player, map cards cast/change that player's vote, and
+// everything else (rules, teams, start button) is read-only.
+const onVoteModeClick = (layout: CustomHudLayout, player: CSPlayerController, id: string): void => {
+    if (realStartTriggered) return;
+    const slot = player.GetPlayerSlot();
+
+    if (id === TAB_BUTTON_ID.map) return setActiveTabForPlayer(layout, slot, "map");
+    if (id === TAB_BUTTON_ID.teams) return setActiveTabForPlayer(layout, slot, "teams");
+    if (id === TAB_BUTTON_ID.rules) return setActiveTabForPlayer(layout, slot, "rules");
+
+    if (id.startsWith(MAP_BUTTON_PREFIX)) return mapvote.castVote(player, id.substring(MAP_BUTTON_PREFIX.length));
+};
+
 export const onCustomHudClicked = (event: { player: CSPlayerController, layout: CustomHudLayout, buttonId: string }): void => {
     const layout = getMainMenuLayout();
     if (!layout || event.layout !== layout) return;
-    // Defensive - SetInputCaptureEnabled already keeps everyone else from generating this event.
-    if (event.player.GetPlayerSlot() !== HOST_PLAYER_SLOT) return;
     if (getGameHasStarted()) return;
 
     const id = event.buttonId;
+    const hostSlot = getHostSlot();
+    if (hostSlot === undefined) return onVoteModeClick(layout, event.player, id);
+    // Defensive - SetInputCaptureEnabled already keeps everyone else from generating this event.
+    if (event.player.GetPlayerSlot() !== hostSlot) return;
 
     if (id === TAB_BUTTON_ID.map) return setActiveTab(layout, "map");
     if (id === TAB_BUTTON_ID.teams) return setActiveTab(layout, "teams");
@@ -205,6 +285,6 @@ export const onCustomHudClicked = (event: { player: CSPlayerController, layout: 
         case "rule_damage_chance_dec": return rules.decrementDamageChance();
         case "rule_health_inc": return rules.incrementHealth();
         case "rule_health_dec": return rules.decrementHealth();
-        case START_BUTTON_ID: return onStartGameClicked(layout);
+        case START_BUTTON_ID: return startMatch(layout);
     }
 };

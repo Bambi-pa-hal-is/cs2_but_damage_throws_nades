@@ -34,55 +34,55 @@
 				<Panel class="MapGrid">
 					<Button id="map_de_ancient" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Ancient" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_ancient_night" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_ancient_night.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Ancient Night" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Ancient Night" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_anubis" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_anubis.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Anubis" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Anubis" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_cache" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_cache.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Cache" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Cache" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_dust2" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_dust2.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Dust2" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Dust2" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_inferno" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_inferno.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Inferno" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Inferno" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_cs_italy" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_italy.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Italy" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Italy" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_mirage" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_mirage.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Mirage" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Mirage" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_nuke" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_nuke.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Nuke" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Nuke" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_cs_office" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/cs_office.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Office" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Office" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_overpass" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_overpass.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Overpass" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Overpass" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_train" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_train.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Train" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Train" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 					<Button id="map_de_vertigo" class="MapCard">
 						<Image class="MapThumb" src="file://{resources}/styles/custom_game/de_vertigo.jpg" />
-						<Panel class="MapCardFooter"><Label class="MapName" text="Vertigo" /></Panel>
+						<Panel class="MapCardFooter"><Panel class="MapCardText"><Label class="MapName" text="Vertigo" /><Label class="MapVotes" text="{s:votes}" /></Panel></Panel>
 					</Button>
 				</Panel>
 			</Panel>
@@ -212,14 +212,14 @@
 			</Panel>
 
 			<Panel id="footer_bar" class="FooterBar">
-				<Label class="FooterHint" text="Configure the rules, then start when ready." />
+				<Label id="footer_hint" class="FooterHint" text="{s:hint}" />
 				<Panel class="StartArea">
 					<Panel id="start_spinner" class="Spinner Hidden">
 						<Panel class="SpinnerRing" />
 						<Label class="SpinnerLabel" text="STARTING..." />
 					</Panel>
 					<Button id="start_game_button" class="StartButton">
-						<Label class="StartLabel" text="START GAME" />
+						<Label class="StartLabel" text="{s:label}" />
 					</Button>
 				</Panel>
 			</Panel>

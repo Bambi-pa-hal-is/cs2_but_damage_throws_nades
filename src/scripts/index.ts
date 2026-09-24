@@ -7,6 +7,9 @@ import * as throwNadesOnDamageUi from "./throwNadesOnDamageUi";
 import * as mainMenu from "./mainMenu";
 import * as rockthevote from "./rockthevote";
 import * as rtvHint from "./rtvHint";
+import * as mapvote from "./mapvote";
+import * as hostControl from "./hostControl";
+import * as ruleCommands from "./ruleCommands";
 import * as timers from "../shared/timers";
 import { onPlayerReset } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
@@ -36,8 +39,18 @@ Instance.OnPlayerActivate((event) => {
 Instance.OnPlayerDisconnect((event) => {
     teamconfiguration.onPlayerDisconnect(event);
     rockthevote.onPlayerDisconnect(event);
-    mainMenu.refreshInputCapture();
+    mapvote.onPlayerDisconnect(event);
+    if (hostControl.onPlayerDisconnect(event)) {
+        mainMenu.onControlModeChanged();
+    } else {
+        mainMenu.refreshInputCapture();
+    }
 });
+
+// but_set_host <player name> - hands control of the match setup menu to that player.
+hostControl.registerCommands(mainMenu.onControlModeChanged);
+// but_throw_on_shoot, but_health, ... - one per setting on the Rules tab.
+ruleCommands.registerCommands();
 
 // Single shared registration, same reasoning as OnPlayerReset above - only one callback can be
 // registered per event name, so each module that needs OnPlayerChat gets called from here.

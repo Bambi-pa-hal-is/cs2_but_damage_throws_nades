@@ -1,6 +1,7 @@
 import { getMainMenuLayout } from "../shared/hud";
 import { getGameHasStarted } from "../shared/gamestate";
 import * as timers from "../shared/timers";
+import { isVoteMode } from "./hostControl";
 
 const RTV_HINT_PANEL_ID = "rtv_hint";
 const RTV_HINT_TEXT_ID = "rtv_hint_text";
@@ -42,11 +43,11 @@ export const onActivate = (): void => {
 // - during warmup/lobby the main menu is up instead, so there's nothing to hint about yet.
 export const onRoundStart = (): void => {
     if (!getGameHasStarted()) return;
-    showMessage("Type !rtv in chat to let the host pick a new map", ROUND_START_VISIBLE_SECONDS);
+    showMessage(`Type !rtv in chat to ${isVoteMode() ? "vote for" : "let the host pick"} a new map`, ROUND_START_VISIBLE_SECONDS);
 };
 
 // Called by rockthevote.ts every time a player votes, so the vote tally shows up on screen and
 // not just in chat.
 export const showVoteStatus = (votes: number, votesNeeded: number): void => {
-    showMessage(`${votes} / ${votesNeeded} votes to let the host pick a new map`, VOTE_UPDATE_VISIBLE_SECONDS);
+    showMessage(`${votes} / ${votesNeeded} votes to ${isVoteMode() ? "vote for" : "let the host pick"} a new map`, VOTE_UPDATE_VISIBLE_SECONDS);
 };
