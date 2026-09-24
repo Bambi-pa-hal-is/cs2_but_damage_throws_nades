@@ -1,5 +1,5 @@
 import { Instance } from "cs_script/point_script";
-import { getGameHasStarted, setGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, isLobbyMap, setGameHasStarted } from "../shared/gamestate";
 import * as mapselect from "./mapselect";
 import * as minimap from "./minimap";
 import * as startgame from "./startgame";
@@ -19,8 +19,7 @@ export const beginGame = (onStarted: () => void): void => {
         name: "configuration_sky",
         input: "Disable",
     });
-    mapselect.onStartGame(() => {
-        minimap.enableMinimap(mapselect.getSelectedMap());
+    const onMapReady = () => {
         teamconfiguration.onStartGame();
         // Give the JoinTeam() calls a moment to actually take effect before startgame.onStartGame()
         // issues mp_restartgame 1 (which is what actually moves players to their new team's spawns).
@@ -36,5 +35,15 @@ export const beginGame = (onStarted: () => void): void => {
             }, 0.5);
             onStarted();
         }, 1);
+    };
+
+    // On a real map (not the lobby) the map is already loaded and has its own radar.
+    if (!isLobbyMap()) {
+        onMapReady();
+        return;
+    }
+    mapselect.onStartGame(() => {
+        minimap.enableMinimap(mapselect.getSelectedMap());
+        onMapReady();
     });
 };

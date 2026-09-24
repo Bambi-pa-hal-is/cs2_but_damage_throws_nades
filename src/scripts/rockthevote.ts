@@ -1,5 +1,5 @@
 import { CSPlayerController, Instance } from "cs_script/point_script";
-import { getGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, isLobbyMap } from "../shared/gamestate";
 import { printToChat } from "../shared/chat";
 import * as mapselect from "./mapselect";
 import * as mapReset from "./mapReset";
@@ -30,6 +30,8 @@ const passVote = (): void => {
 export const onPlayerChat = (event: { player?: CSPlayerController, text: string, team: number }): void => {
     // Nothing to reset before a match has actually started - the menu's already up.
     if (!getGameHasStarted()) return;
+    // Resetting unloads the spawn_group_load-ed map, which only exists in the lobby.
+    if (!isLobbyMap()) return;
 
     const player = event.player;
     if (!player || !player.IsValid() || player.IsBot()) return;

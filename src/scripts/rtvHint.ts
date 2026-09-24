@@ -1,5 +1,5 @@
 import { getMainMenuLayout } from "../shared/hud";
-import { getGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, isLobbyMap } from "../shared/gamestate";
 import * as timers from "../shared/timers";
 import { isVoteMode } from "./hostControl";
 
@@ -42,7 +42,7 @@ export const onActivate = (): void => {
 // Shows the "!rtv" hint at the start of every round, but only once the match has actually started
 // - during warmup/lobby the main menu is up instead, so there's nothing to hint about yet.
 export const onRoundStart = (): void => {
-    if (!getGameHasStarted()) return;
+    if (!getGameHasStarted() || !isLobbyMap()) return;
     showMessage(`Type !rtv in chat to ${isVoteMode() ? "vote for" : "let the host pick"} a new map`, ROUND_START_VISIBLE_SECONDS);
 };
 

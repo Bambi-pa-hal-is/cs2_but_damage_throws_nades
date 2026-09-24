@@ -11,7 +11,7 @@ import * as mapvote from "./mapvote";
 import * as hostControl from "./hostControl";
 import * as ruleCommands from "./ruleCommands";
 import * as timers from "../shared/timers";
-import { onPlayerReset } from "../shared/gamestate";
+import { isLobbyMap, onPlayerReset } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
 
 // Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
@@ -66,6 +66,7 @@ Instance.OnCustomHudClicked((event) => {
 
 Instance.OnActivate(() => {
     Instance.Msg("Script activated!!!");
+    Instance.Msg(`Map name: "${Instance.GetMapName()}" - ${isLobbyMap() ? "on the lobby map" : "NOT on the lobby map"}`);
     mapselect.onActivate();
     startgame.onActivate();
     teamconfiguration.onActivate();

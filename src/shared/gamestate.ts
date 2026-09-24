@@ -6,6 +6,13 @@ let gameHasStarted = false;
 
 export const CONFIGURATION_SPAWN_NAME = "configuration_spawn";
 
+// The lobby level that loads the chosen map in via spawn_group_load. The scripts can also run
+// directly on a real map (changelevel de_dust2 customgamemode=...) - then there's nothing to load.
+const LOBBY_MAP_NAME = "but_damage_throws_nades";
+
+// endsWith rather than === in case the name comes back with a workshop path in front of it.
+export const isLobbyMap = (): boolean => Instance.GetMapName().endsWith(LOBBY_MAP_NAME);
+
 // info_player_counterterrorist and info_player_terrorist have no Enable/Disable input, only
 // toggleenabled, and every spawn starts enabled by default. Toggling isn't idempotent, so we track
 // the current enabled state ourselves and only fire the toggle when it actually needs to flip.

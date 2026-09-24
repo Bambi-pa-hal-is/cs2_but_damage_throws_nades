@@ -1,6 +1,6 @@
 import { CSPlayerController, CustomHudLayout, Instance } from "cs_script/point_script";
 import { getMainMenuLayout } from "../shared/hud";
-import { getGameHasStarted } from "../shared/gamestate";
+import { getGameHasStarted, isLobbyMap } from "../shared/gamestate";
 import * as mapselect from "./mapselect";
 import * as teamconfiguration from "./teamconfiguration";
 import * as rules from "./throwNadesOnDamageUi";
@@ -35,10 +35,10 @@ let realStartTriggered = false;
 // warmup round restart fired" (leave whatever tab the host is on alone).
 let menuVisible = false;
 
-type Tab = "map" | "teams" | "rules" | "starting";
+type Tab = "map" | "teams" | "rules" | "bots" | "starting";
 
-const TAB_PANEL_ID: Record<Tab, string> = { map: "panel_map", teams: "panel_teams", rules: "panel_rules", starting: "panel_starting" };
-const TAB_BUTTON_ID: Record<Tab, string> = { map: "tab_map", teams: "tab_teams", rules: "tab_rules", starting: "tab_starting" };
+const TAB_PANEL_ID: Record<Tab, string> = { map: "panel_map", teams: "panel_teams", rules: "panel_rules", bots: "panel_bots", starting: "panel_starting" };
+const TAB_BUTTON_ID: Record<Tab, string> = { map: "tab_map", teams: "tab_teams", rules: "tab_rules", bots: "tab_bots", starting: "tab_starting" };
 
 const MAP_BUTTON_PREFIX = "map_";
 const TEAM_CT_BUTTON_PREFIX = "team_slot_ct_";
@@ -118,12 +118,23 @@ export const onControlModeChanged = (): void => {
     renderControlMode(layout);
 };
 
+const hideMenu = (layout: CustomHudLayout): void => {
+    layout.SetHasClass(ROOT_PANEL_ID, "Hidden", true);
+    menuVisible = false;
+};
+
 const resetMenuChrome = (layout: CustomHudLayout): void => {
     realStartTriggered = false;
     countdownGeneration++;
     mapvote.reset();
     clearPlayerTabOverrides(layout);
-    setActiveTab(layout, "map");
+
+    // On a real map there's no map to pick, and bots already work - both tabs only make sense in
+    // the lobby.
+    const lobby = isLobbyMap();
+    layout.SetHasClass(TAB_BUTTON_ID.map, "Hidden", !lobby);
+    layout.SetHasClass(TAB_BUTTON_ID.bots, "Hidden", !lobby);
+    setActiveTab(layout, lobby ? "map" : "rules");
     layout.SetHasClass(TAB_BAR_ID, "Hidden", false);
     layout.SetHasClass(START_SPINNER_ID, "Hidden", true);
     renderControlMode(layout);
@@ -152,7 +163,17 @@ const startCountdown = (layout: CustomHudLayout, onComplete: () => void): void =
 
 export const onActivate = (): void => {
     const layout = getMainMenuLayout();
-    if (!layout) return;
+    if (!layout) {
+        Instance.Msg("mainMenu.onActivate: main_menu_layout not found - menu setup skipped");
+        return;
+    }
+
+    // startgame.onActivate() already started the match (dedicated server on a real map).
+    if (getGameHasStarted()) {
+        hideMenu(layout);
+        refreshInputCapture();
+        return;
+    }
 
     layout.SetHasClass(ROOT_PANEL_ID, "Hidden", false);
     menuVisible = true;
@@ -167,8 +188,7 @@ export const onRoundStart = (): void => {
     if (!layout) return;
 
     if (getGameHasStarted()) {
-        layout.SetHasClass(ROOT_PANEL_ID, "Hidden", true);
-        menuVisible = false;
+        hideMenu(layout);
     } else if (!menuVisible) {
         // Only reset the chrome (active tab, start button/spinner state) the first time the menu
         // reappears after being hidden. Warmup round-starts fire repeatedly while the lobby is up -
@@ -192,6 +212,15 @@ const startMatch = (layout: CustomHudLayout): void => {
     realStartTriggered = true;
 
     clearPlayerTabOverrides(layout);
+
+    // On a real map there's nothing to load - just close the menu and start with the chosen rules.
+    if (!isLobbyMap()) {
+        hideMenu(layout);
+        beginGame(() => {});
+        refreshInputCapture();
+        return;
+    }
+
     layout.SetHasClass(START_BUTTON_ID, "Disabled", true);
     layout.SetHasClass(TAB_BAR_ID, "Hidden", true);
     setActiveTab(layout, "starting");
@@ -199,10 +228,7 @@ const startMatch = (layout: CustomHudLayout): void => {
     // Kick the real map load off immediately - it no longer waits on the countdown below. The
     // countdown still plays for show, and if the (variable-length) real load is still going once
     // it runs out, the spinner takes over as the fallback "still loading" indicator.
-    beginGame(() => {
-        layout.SetHasClass(ROOT_PANEL_ID, "Hidden", true);
-        menuVisible = false;
-    });
+    beginGame(() => hideMenu(layout));
 
     // beginGame() sets gameHasStarted synchronously, before the chosen map finishes loading -
     // revoke the host's input capture right away so they can't click anything else mid-load.
@@ -241,6 +267,7 @@ const onVoteModeClick = (layout: CustomHudLayout, player: CSPlayerController, id
     if (id === TAB_BUTTON_ID.map) return setActiveTabForPlayer(layout, slot, "map");
     if (id === TAB_BUTTON_ID.teams) return setActiveTabForPlayer(layout, slot, "teams");
     if (id === TAB_BUTTON_ID.rules) return setActiveTabForPlayer(layout, slot, "rules");
+    if (id === TAB_BUTTON_ID.bots) return setActiveTabForPlayer(layout, slot, "bots");
 
     if (id.startsWith(MAP_BUTTON_PREFIX)) return mapvote.castVote(player, id.substring(MAP_BUTTON_PREFIX.length));
 };
@@ -256,12 +283,13 @@ export const onCustomHudClicked = (event: { player: CSPlayerController, layout: 
     // Defensive - SetInputCaptureEnabled already keeps everyone else from generating this event.
     if (event.player.GetPlayerSlot() !== hostSlot) return;
 
-    if (id === TAB_BUTTON_ID.map) return setActiveTab(layout, "map");
+    if (id === TAB_BUTTON_ID.map && isLobbyMap()) return setActiveTab(layout, "map");
     if (id === TAB_BUTTON_ID.teams) return setActiveTab(layout, "teams");
     if (id === TAB_BUTTON_ID.rules) return setActiveTab(layout, "rules");
+    if (id === TAB_BUTTON_ID.bots) return setActiveTab(layout, "bots");
     if (id === TAB_BUTTON_ID.starting) return previewStartingTab(layout);
 
-    if (id.startsWith(MAP_BUTTON_PREFIX)) return mapselect.selectMap(id.substring(MAP_BUTTON_PREFIX.length));
+    if (id.startsWith(MAP_BUTTON_PREFIX) && isLobbyMap()) return mapselect.selectMap(id.substring(MAP_BUTTON_PREFIX.length));
 
     if (id.startsWith(TEAM_CT_BUTTON_PREFIX)) {
         return teamconfiguration.handleSlotClick("ct", Number(id.substring(TEAM_CT_BUTTON_PREFIX.length)));

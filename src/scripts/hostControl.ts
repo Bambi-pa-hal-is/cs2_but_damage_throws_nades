@@ -1,5 +1,6 @@
 import { CSPlayerController, Instance } from "cs_script/point_script";
 import { persistOnReload } from "../shared/persist";
+import { isLobbyMap } from "../shared/gamestate";
 
 // Flip to true to test the dedicated-server flow (everyone votes on the map, default rules) from
 // inside a listen server. but_set_host still overrides it, same as on a real dedicated server.
@@ -23,6 +24,10 @@ export const getHostSlot = (): number | undefined => {
 };
 
 export const isVoteMode = (): boolean => getHostSlot() === undefined;
+
+// Running directly on a real map with nobody hosting: there's no map to vote on, so there's no
+// menu at all - the match just runs with the default rules.
+export const isMenuSkipped = (): boolean => !isLobbyMap() && isVoteMode();
 
 const getConnectedHumans = (): CSPlayerController[] =>
     Instance.GetAllPlayerControllers().filter((controller) => controller.IsValid() && controller.IsConnected() && !controller.IsBot());

@@ -1,7 +1,14 @@
 import { Instance } from "cs_script/point_script";
 import { applyGameState, getGameHasStarted, setGameHasStarted } from "../shared/gamestate";
+import { isMenuSkipped } from "./hostControl";
 
 export const onActivate = () => {
+    // No lobby phase at all - leave the server's own settings alone and just switch the nade
+    // rules on, instead of applying the lobby warmup settings below.
+    if (isMenuSkipped()) {
+        setGameHasStarted(true);
+        return;
+    }
     resetMap();
 };
 

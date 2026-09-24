@@ -25,6 +25,9 @@
 				<Button id="tab_rules" class="TabButton">
 					<Label text="RULES" />
 				</Button>
+				<Button id="tab_bots" class="TabButton">
+					<Label text="BOT SUPPORT (EXPERIMENTAL)" />
+				</Button>
 				<Button id="tab_starting" class="TabButton Hidden">
 					<Label text="STARTING" />
 				</Button>
@@ -200,6 +203,36 @@
 							<Label class="RuleLabel" text="Only random between allowed grenades the player is carrying" />
 							<Button id="rule_toggle_only_equipped" class="Checkbox"><Label class="CheckMark" text="&#10003;" /></Button>
 						</Panel>
+					</Panel>
+				</Panel>
+			</Panel>
+
+			<Panel id="panel_bots" class="TabPanel Hidden">
+				<Panel class="RulesColumn">
+					<Label class="SectionEyebrow" text="PLAYING WITH BOTS" />
+					<Label class="BotText" text="Bots don't work in this lobby. Start your map from the console instead:" />
+					<Label class="BotStep" text="1.  Open the console" />
+					<Label class="BotStep" text="2.  Type the command for your map" />
+					<Label class="BotStep" text="3.  Press Enter and add bots as usual" />
+					<Label class="BotNote" text="No console? Settings &gt; Game &gt; Enable Developer Console." />
+					<Label class="BotNote" text="The command is also on the Workshop page." />
+				</Panel>
+				<Panel class="RulesColumn Last">
+					<Label class="SectionEyebrow" text="TYPE THIS IN THE CONSOLE" />
+					<Panel class="BotMapList">
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Ancient" /><Label class="BotCommand" text="changelevel de_ancient customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Ancient Night" /><Label class="BotCommand" text="changelevel de_ancient_night customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Anubis" /><Label class="BotCommand" text="changelevel de_anubis customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Cache" /><Label class="BotCommand" text="changelevel de_cache customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Dust2" /><Label class="BotCommand" text="changelevel de_dust2 customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Inferno" /><Label class="BotCommand" text="changelevel de_inferno customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Italy" /><Label class="BotCommand" text="changelevel cs_italy customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Mirage" /><Label class="BotCommand" text="changelevel de_mirage customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Nuke" /><Label class="BotCommand" text="changelevel de_nuke customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Office" /><Label class="BotCommand" text="changelevel cs_office customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Overpass" /><Label class="BotCommand" text="changelevel de_overpass customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Train" /><Label class="BotCommand" text="changelevel de_train customgamemode=3595406215" /></Panel>
+						<Panel class="BotMapRow"><Label class="BotMapName" text="Vertigo" /><Label class="BotCommand" text="changelevel de_vertigo customgamemode=3595406215" /></Panel>
 					</Panel>
 				</Panel>
 			</Panel>
