@@ -5,7 +5,7 @@ import { persistOnReload } from "../shared/persist";
 // `npm run update-minimap`. Every map's volume covers that map's own world area, so they all overlap
 // and all start disabled - only the volume(s) of the map that's actually loaded get enabled.
 // Must match namePrefix in src/minimap-generator/minimap.config.json.
-const MINIMAP_VOLUME_PREFIX = "dynamic_minimap_";
+export const MINIMAP_VOLUME_PREFIX = "dynamic_minimap_";
 // Multi-level maps (nuke, train, vertigo) get a second volume below their radar's split altitude.
 const LOWER_SECTION_SUFFIX = "_lower";
 

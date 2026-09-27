@@ -30,7 +30,7 @@ const passVote = (): void => {
 export const onPlayerChat = (event: { player?: CSPlayerController, text: string, team: number }): void => {
     // Nothing to reset before a match has actually started - the menu's already up.
     if (!getGameHasStarted()) return;
-    // Resetting unloads the spawn_group_load-ed map, which only exists in the lobby.
+    // Resetting unloads the spawn-group-loaded map, which only exists in the lobby.
     if (!isLobbyMap()) return;
 
     const player = event.player;
