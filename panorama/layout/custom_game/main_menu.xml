@@ -210,7 +210,8 @@
 			<Panel id="panel_bots" class="TabPanel Hidden">
 				<Panel class="RulesColumn">
 					<Label class="SectionEyebrow" text="PLAYING WITH BOTS" />
-					<Label class="BotText" text="Bots don't work in this lobby. Start your map from the console instead:" />
+					<Label class="BotText" text="Bots only partly work in this lobby. They move around the map, but won't plant the bomb or rescue hostages." />
+					<Label class="BotText" text="For full bot support, start your map from the console instead:" />
 					<Label class="BotStep" text="1.  Open the console" />
 					<Label class="BotStep" text="2.  Type the command for your map" />
 					<Label class="BotStep" text="3.  Press Enter and add bots as usual" />

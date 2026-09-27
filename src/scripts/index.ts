@@ -11,7 +11,7 @@ import * as mapvote from "./mapvote";
 import * as hostControl from "./hostControl";
 import * as ruleCommands from "./ruleCommands";
 import * as timers from "../shared/timers";
-import { isLobbyMap, onPlayerReset } from "../shared/gamestate";
+import { isLobbyMap, onPlayerReset, removeConfigurationSpawnsOffLobby } from "../shared/gamestate";
 import { applyHealthToPlayer } from "./throwNadesOnDamageUi";
 
 // Single shared registration, same pattern as OnActivate/OnRoundStart below - each module that
@@ -75,6 +75,7 @@ Instance.OnActivate(() => {
 });
 
 Instance.OnRoundStart(() => {
+    removeConfigurationSpawnsOffLobby();
     mapselect.onRoundStart();
     minimap.onRoundStart();
     startgame.onRoundStart();

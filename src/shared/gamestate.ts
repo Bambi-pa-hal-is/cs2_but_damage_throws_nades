@@ -80,10 +80,19 @@ export const onPlayerReset = (event: { player: CSPlayerPawn }) => {
     controller.JoinTeam(CT_TEAM);
 };
 
+// On a real map (changelevel de_dust2 customgamemode=...) the map's cfg loads the lobby in as a
+// spawn group, which brings the configuration spawns along - they'd only compete with the map's
+// own spawns, so they're removed there instead of being toggled.
+export const removeConfigurationSpawnsOffLobby = (): void => {
+    if (isLobbyMap()) return;
+    Instance.EntFireAtName({ name: CONFIGURATION_SPAWN_NAME, input: "Kill" });
+};
+
 // Applies the spawn/team setup for the current gameHasStarted value. Safe to call repeatedly
 // (e.g. every round start) to catch late joiners or manual team switches.
 export const applyGameState = (): void => {
     setConfigurationSpawnsEnabled(!gameHasStarted);
+    removeConfigurationSpawnsOffLobby();
 
     if (!gameHasStarted) {
         refreshPlayers();
