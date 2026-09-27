@@ -7,7 +7,20 @@ import { pathToFileURL } from "node:url";
 // array in src/scripts/mapselect.ts (can't import it directly - that file pulls in cs_script/point_script,
 // which only resolves inside the esbuild bundle, not plain Node).
 const MAP_NAMES = [
-    "but_damage_throws_nades"
+    "but_damage_throws_nades",
+    "cs_italy",
+    "cs_office",
+    "de_ancient_night",
+    "de_ancient",
+    "de_anubis",
+    "de_cache",
+    "de_dust2",
+    "de_inferno",
+    "de_mirage",
+    "de_nuke",
+    "de_overpass",
+    "de_train",
+    "de_vertigo"
 ];
 
 export const copyLoadingscreen = () => {
